@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyAccessToken, TokenPayload } from '../services/token.service';
+import { verifyAccessToken } from "../services/token.service";
 import { AuthError } from '../utils/errors';
 
 // Extend Express Request to include auth context

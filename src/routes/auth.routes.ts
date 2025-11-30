@@ -1,19 +1,18 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   registerController,
   loginController,
   refreshController,
   revokeController,
   meController,
-} from '../controllers/auth.controller';
-import { validateBody } from '../middleware/validation.middleware';
-import { authValidators } from '../utils/validators';
-import { authRateLimiter } from '../middleware/rateLimit.middleware';
-import { authMiddleware } from '../middleware/auth.middleware';
-import { clientVerificationMiddleware } from '../middleware/client.middleware';
-import { getPublicKey } from '../config/keys';
+} from "../controllers/auth.controller";
+import { validateBody } from "../middleware/validation.middleware";
+import { authValidators } from "../utils/validators";
+import { authRateLimiter } from "../middleware/rateLimit.middleware";
+import { authMiddleware } from "../middleware/auth.middleware";
+import { getPublicKey } from "../config/keys";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const pem2jwk = require('pem-jwk');
+const pem2jwk = require("pem-jwk");
 
 const router = Router();
 
@@ -22,7 +21,7 @@ const router = Router();
  * Register a new user
  */
 router.post(
-  '/register',
+  "/register",
   authRateLimiter,
   validateBody(authValidators.register),
   registerController
@@ -33,7 +32,7 @@ router.post(
  * Login user and receive tokens
  */
 router.post(
-  '/login',
+  "/login",
   authRateLimiter,
   validateBody(authValidators.login),
   loginController
@@ -44,7 +43,7 @@ router.post(
  * Refresh access token using refresh token
  */
 router.post(
-  '/refresh',
+  "/refresh",
   authRateLimiter,
   validateBody(authValidators.refresh),
   refreshController
@@ -54,38 +53,34 @@ router.post(
  * POST /revoke
  * Revoke a refresh token
  */
-router.post(
-  '/revoke',
-  validateBody(authValidators.revoke),
-  revokeController
-);
+router.post("/revoke", validateBody(authValidators.revoke), revokeController);
 
 /**
  * GET /.well-known/jwks.json
  * Public key endpoint in JWKS format
  */
-router.get('/.well-known/jwks.json', (req, res) => {
+router.get("/.well-known/jwks.json", (req, res) => {
   try {
     const publicKey = getPublicKey();
-    
+
     // Convert PEM to JWK format
     const jwk = pem2jwk.pem2jwk(publicKey);
-    
+
     // Add JWKS metadata
     const jwks = {
       keys: [
         {
           ...jwk,
-          use: 'sig',
-          alg: 'RS256',
-          kid: '1', // Key ID (should be unique per key, can be derived from key hash)
+          use: "sig",
+          alg: "RS256",
+          kid: "1", // Key ID (should be unique per key, can be derived from key hash)
         },
       ],
     };
 
     res.json(jwks);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to generate JWKS' });
+    res.status(500).json({ error: "Failed to generate JWKS" });
   }
 });
 
@@ -93,7 +88,6 @@ router.get('/.well-known/jwks.json', (req, res) => {
  * GET /me
  * Get current user information (requires authentication)
  */
-router.get('/me', authMiddleware, meController);
+router.get("/me", authMiddleware, meController);
 
 export default router;
-

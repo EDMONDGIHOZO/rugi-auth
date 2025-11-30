@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -34,7 +33,7 @@ model App {
   clientId         String    @unique @map("client_id") @db.VarChar(255)
   clientSecretHash String?   @map("client_secret_hash") @db.Text
   type             AppType   @default(PUBLIC)
-  redirectUris     String[]  @map("redirect_uris") @db.Json
+  redirectUris     Json      @map("redirect_uris")
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
 
   userAppRoles  UserAppRole[]
