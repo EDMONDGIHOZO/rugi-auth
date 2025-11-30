@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: yebalabs-auth-db
+    environment:
+      POSTGRES_USER: yebalabs
+      POSTGRES_PASSWORD: yebalabs_password
+      POSTGRES_DB: yebalabs_auth
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yebalabs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: Node.js development service
+  # Uncomment if you want to run the app in Docker
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: yebalabs-auth-app
+  #   environment:
+  #     NODE_ENV: development
+  #     DATABASE_URL: postgresql://yebalabs:yebalabs_password@postgres:5432/yebalabs_auth?schema=public
+  #     PORT: 3000
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   command: npm run dev
+
+volumes:
+  postgres_data:
+

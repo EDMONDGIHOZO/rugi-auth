@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(uuid()) @db.Uuid
+  email           String    @unique @db.VarChar(255)
+  passwordHash    String    @map("password_hash") @db.Text
+  isEmailVerified Boolean   @default(false) @map("is_email_verified")
+  mfaEnabled      Boolean   @default(false) @map("mfa_enabled")
+  mfaSecret       String?   @map("mfa_secret") @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  userAppRoles   UserAppRole[]
+  refreshTokens  RefreshToken[]
+  authAudits     AuthAudit[]
+  assignedRoles  UserAppRole[] @relation("AssignedBy")
+
+  @@map("users")
+  @@index([email])
+}
+
+model App {
+  id               String    @id @default(uuid()) @db.Uuid
+  name             String    @db.VarChar(255)
+  clientId         String    @unique @map("client_id") @db.VarChar(255)
+  clientSecretHash String?   @map("client_secret_hash") @db.Text
+  type             AppType   @default(PUBLIC)
+  redirectUris     String[]  @map("redirect_uris") @db.Json
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  userAppRoles  UserAppRole[]
+  refreshTokens RefreshToken[]
+
+  @@map("apps")
+  @@index([clientId])
+}
+
+enum AppType {
+  PUBLIC
+  CONFIDENTIAL
+}
+
+model Role {
+  id        Int    @id @default(autoincrement())
+  name      String @unique @db.VarChar(100)
+
+  userAppRoles UserAppRole[]
+
+  @@map("roles")
+}
+
+model UserAppRole {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  appId      String   @map("app_id") @db.Uuid
+  roleId     Int      @map("role_id")
+  assignedBy String?  @map("assigned_by") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamp(6)
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  app        App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedByUser User? @relation("AssignedBy", fields: [assignedBy], references: [id])
+
+  @@map("user_app_roles")
+  @@unique([userId, appId, roleId])
+  @@index([userId, appId])
+}
+
+model RefreshToken {
+  token      String   @id @db.VarChar(255)
+  userId     String   @map("user_id") @db.Uuid
+  appId      String   @map("app_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  expiresAt  DateTime @map("expires_at") @db.Timestamp(6)
+  revoked    Boolean  @default(false)
+  deviceInfo Json?    @map("device_info")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  app  App  @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+  @@index([expiresAt])
+  @@index([revoked])
+  @@index([userId, appId])
+}
+
+model AuthAudit {
+  id       String      @id @default(uuid()) @db.Uuid
+  userId   String?     @map("user_id") @db.Uuid
+  action   AuditAction
+  metadata Json?
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("auth_audit")
+  @@index([createdAt])
+  @@index([userId])
+  @@index([action])
+}
+
+enum AuditAction {
+  LOGIN
+  REFRESH
+  REVOKE
+  ROLE_ASSIGN
+  REGISTER
+}
+
