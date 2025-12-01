@@ -110,7 +110,7 @@ export async function requestPasswordResetController(
     // Always return success to prevent email enumeration
     res.json({
       message:
-        'If an account with that email exists, a password reset link has been sent.',
+        'If an account with that email exists, a password reset code has been sent.',
     });
   } catch (error) {
     next(error);

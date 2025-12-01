@@ -41,7 +41,10 @@ export const authValidators = {
   }),
 
   resetPassword: Joi.object({
-    token: Joi.string().uuid().required(),
+    token: Joi.string()
+      .pattern(/^\d+$/)
+      .length(6)
+      .required(),
     new_password: Joi.string().min(8).required().max(128),
   }),
 

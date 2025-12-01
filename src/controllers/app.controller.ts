@@ -1,6 +1,13 @@
-import {Request, Response, NextFunction} from "express";
-import {createApp, updateApp, deleteAppById, findAppById, getAppUsers} from "../services/app.service";
-import {prisma} from "../config/database";
+import { Request, Response, NextFunction } from "express";
+import { Prisma } from "@prisma/client";
+import {
+  createApp,
+  updateApp,
+  deleteAppById,
+  findAppById,
+  getAppUsers,
+} from "../services/app.service";
+import { prisma } from "../config/database";
 
 /**
  * Register a new client application
@@ -31,25 +38,25 @@ export async function listAppsController(
 ) {
     try {
         const {
-            search,
-            page = 1,
-            limit = 20,
+          search,
+          page = 1,
+          limit = 20,
         } = req.query as {
-            search?: string;
-            page?: number;
-            limit?: number;
+          search?: string;
+          page?: number;
+          limit?: number;
         };
 
         const skip = (Number(page) - 1) * Number(limit);
         const take = Number(limit);
 
-        const where: any = {};
+        const where: Prisma.AppWhereInput = {};
 
         if (search) {
-            where.OR = [
-                {name: {contains: search, mode: "insensitive"}},
-                {clientId: {contains: search, mode: "insensitive"}},
-            ];
+          where.OR = [
+            { name: { contains: search, mode: "insensitive" } },
+            { clientId: { contains: search, mode: "insensitive" } },
+          ];
         }
 
         const [apps, total] = await Promise.all([

@@ -17,8 +17,7 @@ import { authValidators } from "../utils/validators";
 import { authRateLimiter } from "../middleware/rateLimit.middleware";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { getPublicKey } from "../config/keys";
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pem2jwk = require("pem-jwk");
+import * as pemJwk from "pem-jwk";
 
 const router = Router();
 
@@ -70,7 +69,7 @@ router.get("/.well-known/jwks.json", (_req, res) => {
     const publicKey = getPublicKey();
 
     // Convert PEM to JWK format
-    const jwk = pem2jwk.pem2jwk(publicKey);
+    const jwk = pemJwk.pem2jwk(publicKey);
 
     // Add JWKS metadata
     const jwks = {
@@ -109,11 +108,18 @@ router.post(
 
 /**
  * POST /password-reset/verify
- * Verify if a reset token is valid
+ * Verify if a reset code is valid
  */
 router.post(
   "/password-reset/verify",
-  validateBody(Joi.object({ token: Joi.string().uuid().required() })),
+  validateBody(
+    Joi.object({
+      token: Joi.string()
+        .pattern(/^\d+$/)
+        .length(6)
+        .required(),
+    })
+  ),
   verifyResetTokenController
 );
 

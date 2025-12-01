@@ -3,6 +3,7 @@ import { generateSecurePassword, hashPassword } from "./password.service";
 import { findOrCreateRole, isSuperAdmin } from "./role.service";
 import { ConflictError, NotFoundError, AuthError } from "../utils/errors";
 import { AuditAction } from "@prisma/client";
+import { sendUserInviteEmail } from "./email.service";
 
 export interface InviteUserInput {
   email: string;
@@ -124,6 +125,23 @@ export async function inviteUser(input: InviteUserInput) {
       },
     },
   });
+
+  // Send invite / welcome email
+  try {
+    await sendUserInviteEmail({
+      email: user.email,
+      apps: apps.map((app) => ({
+        id: app.id,
+        name: app.name,
+      })),
+      generatedPassword: generatedPassword,
+      isNewUser,
+    });
+  } catch (error) {
+    // Log and rethrow to surface configuration issues
+    console.error("Failed to send user invite email:", error);
+    throw new Error("Failed to send user invite email");
+  }
 
   return {
     id: user.id,

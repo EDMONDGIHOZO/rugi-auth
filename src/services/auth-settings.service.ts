@@ -1,6 +1,7 @@
 import { prisma } from '../config/database';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
 import { findAppById } from './app.service';
+import { AppAuthSettings } from '@prisma/client';
 
 export interface AuthSettingsInput {
   email_password_enabled?: boolean;
@@ -339,7 +340,7 @@ function validateOAuthSettings(input: AuthSettingsInput): void {
 /**
  * Format auth settings for API response
  */
-function formatAuthSettings(settings: any): AuthSettingsResponse {
+function formatAuthSettings(settings: AppAuthSettings): AuthSettingsResponse {
   return {
     id: settings.id,
     app_id: settings.appId,

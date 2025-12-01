@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import { Prisma, AuditAction } from '@prisma/client';
 import { prisma } from '../config/database';
-import { AuditAction } from '@prisma/client';
 
 /**
  * List audit logs with filtering and pagination
@@ -24,7 +24,7 @@ export async function listAuditController(
     const take = Number(limit);
 
     // Build where clause
-    const where: any = {};
+    const where: Prisma.AuthAuditWhereInput = {};
 
     if (user_id) {
       where.userId = user_id as string;

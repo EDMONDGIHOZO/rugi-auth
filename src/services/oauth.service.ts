@@ -89,8 +89,10 @@ export async function exchangeGoogleCode(
     );
 
     return response.data;
-  } catch (error: any) {
-    console.error('Google token exchange error:', error.response?.data);
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown } };
+    // eslint-disable-next-line no-console
+    console.error('Google token exchange error:', err.response?.data);
     throw new AuthError('Failed to exchange Google authorization code');
   }
 }
@@ -112,8 +114,10 @@ export async function getGoogleUserInfo(
     );
 
     return response.data;
-  } catch (error: any) {
-    console.error('Google user info error:', error.response?.data);
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown } };
+    // eslint-disable-next-line no-console
+    console.error('Google user info error:', err.response?.data);
     throw new AuthError('Failed to get Google user information');
   }
 }

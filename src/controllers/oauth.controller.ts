@@ -166,7 +166,7 @@ export async function getAvailableProviders(
       where: { appId: app.id },
     });
 
-    const providers: any = {
+    const providers: Record<string, boolean> = {
       email_password: settings?.emailPasswordEnabled ?? true,
       email_otp: settings?.emailOtpEnabled ?? false,
     };

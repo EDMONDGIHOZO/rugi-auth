@@ -1,5 +1,6 @@
-import {Request, Response, NextFunction} from 'express';
-import {assignUserRole} from '../services/role.service';
+import { Request, Response, NextFunction } from 'express';
+import { Prisma } from '@prisma/client';
+import { assignUserRole } from '../services/role.service';
 import {
     inviteUser,
     findUserById,
@@ -62,19 +63,19 @@ export async function listUsersController(
     next: NextFunction
 ) {
     try {
-        const {search, page = 1, limit = 20} = req.query as {
-            search?: string;
-            page?: number;
-            limit?: number;
+        const { search, page = 1, limit = 20 } = req.query as {
+          search?: string;
+          page?: number;
+          limit?: number;
         };
 
         const skip = (Number(page) - 1) * Number(limit);
         const take = Number(limit);
 
-        const where: any = {};
+        const where: Prisma.UserWhereInput = {};
 
         if (search) {
-            where.email = {contains: search, mode: 'insensitive'};
+          where.email = { contains: search, mode: 'insensitive' };
         }
 
         const [users, total] = await Promise.all([

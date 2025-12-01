@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 
 /**
@@ -19,7 +20,7 @@ export async function listRolesController(
     const skip = (Number(page) - 1) * Number(limit);
     const take = Number(limit);
 
-    const where: any = {};
+    const where: Prisma.RoleWhereInput = {};
 
     if (search) {
       where.name = { contains: search, mode: 'insensitive' };

@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../config/database';
 import { hashPassword } from './password.service';
 import { sendPasswordResetEmail } from './email.service';
@@ -6,6 +5,18 @@ import { getExpiryDate } from '../utils/time';
 import { env } from '../config/env';
 import { NotFoundError, AuthError } from '../utils/errors';
 import { AuditAction } from '@prisma/client';
+
+/**
+ * Generate a random numeric OTP code for password reset
+ */
+function generatePasswordResetOTP(length: number = env.otp.length): string {
+  const digits = '0123456789';
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += digits.charAt(Math.floor(Math.random() * digits.length));
+  }
+  return code;
+}
 
 /**
  * Request a password reset
@@ -34,8 +45,8 @@ export async function requestPasswordReset(email: string): Promise<void> {
     },
   });
 
-  // Generate reset token
-  const token = uuidv4();
+  // Generate reset OTP code
+  const token = generatePasswordResetOTP();
   const expiresAt = getExpiryDate(env.passwordReset.tokenExpiry);
 
   // Create reset token
@@ -47,15 +58,13 @@ export async function requestPasswordReset(email: string): Promise<void> {
     },
   });
 
-  // Generate reset link
-  const resetLink = `${env.frontendUrl}/reset-password?token=${token}`;
   const expiresInMinutes = Math.ceil(
     (expiresAt.getTime() - Date.now()) / (60 * 1000)
   );
 
   // Send email
   try {
-    await sendPasswordResetEmail(user.email, resetLink, expiresInMinutes);
+    await sendPasswordResetEmail(user.email, token, expiresInMinutes);
   } catch (error) {
     // Log error but don't fail the request
     // Token is already created, user can request again if needed
