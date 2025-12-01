@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { prisma } from '../config/database';
-import { AuthError, ValidationError } from '../utils/errors';
+import { AuthError } from '../utils/errors';
 import { getAuthSettings } from './auth-settings.service';
 import { RegistrationMethod } from '@prisma/client';
 
@@ -71,13 +71,23 @@ export async function exchangeGoogleCode(
     throw new AuthError('Google authentication is not enabled');
   }
 
+  // Get the secret directly from database (not exposed in response interface)
+  const dbSettings = await prisma.appAuthSettings.findUnique({
+    where: { appId },
+    select: { googleClientSecret: true },
+  });
+
+  if (!dbSettings?.googleClientSecret) {
+    throw new AuthError('Google OAuth secret is not configured');
+  }
+
   try {
     const response = await axios.post<GoogleTokenResponse>(
       'https://oauth2.googleapis.com/token',
       {
         code,
         client_id: settings.google_client_id,
-        client_secret: settings.google_client_secret,
+        client_secret: dbSettings.googleClientSecret,
         redirect_uri: redirectUri,
         grant_type: 'authorization_code',
       },

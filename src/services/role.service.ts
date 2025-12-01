@@ -57,9 +57,8 @@ export async function assignUserRole(
   // Check if role already assigned
   const existing = await prisma.userAppRole.findUnique({
     where: {
-      userId_appId_roleId: {
+      userId_roleId: {
         userId,
-        appId,
         roleId: role.id,
       },
     },
@@ -73,23 +72,25 @@ export async function assignUserRole(
   const userAppRole = await prisma.userAppRole.create({
     data: {
       userId,
-      appId,
       roleId: role.id,
       assignedBy: assignedBy || null,
     },
     include: {
-      role: true,
+      role: {
+        include: {
+          app: {
+            select: {
+              id: true,
+              name: true,
+              clientId: true,
+            },
+          },
+        },
+      },
       user: {
         select: {
           id: true,
           email: true,
-        },
-      },
-      app: {
-        select: {
-          id: true,
-          name: true,
-          clientId: true,
         },
       },
     },

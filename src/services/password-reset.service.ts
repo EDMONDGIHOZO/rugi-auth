@@ -3,7 +3,7 @@ import { hashPassword } from './password.service';
 import { sendPasswordResetEmail } from './email.service';
 import { getExpiryDate } from '../utils/time';
 import { env } from '../config/env';
-import { NotFoundError, AuthError } from '../utils/errors';
+import { AuthError } from '../utils/errors';
 import { AuditAction } from '@prisma/client';
 
 /**

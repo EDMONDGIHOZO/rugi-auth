@@ -6,7 +6,7 @@ import { ForbiddenError } from '../utils/errors';
  * Must be used after authMiddleware
  */
 export function roleMiddleware(requiredRole: string) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user) {
       throw new ForbiddenError('Authentication required');
     }
@@ -25,7 +25,7 @@ export function roleMiddleware(requiredRole: string) {
  * Middleware to check if user has any of the required roles
  */
 export function anyRoleMiddleware(...requiredRoles: string[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user) {
       throw new ForbiddenError('Authentication required');
     }

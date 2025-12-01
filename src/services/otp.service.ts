@@ -2,7 +2,7 @@ import { prisma } from '../config/database';
 import { sendOTPEmail } from './email.service';
 import { getExpiryDate } from '../utils/time';
 import { env } from '../config/env';
-import { NotFoundError, AuthError } from '../utils/errors';
+import { AuthError } from '../utils/errors';
 import { AuditAction } from '@prisma/client';
 import { verifyClientCredentials } from './app.service';
 import { getUserRoles } from './role.service';
@@ -172,7 +172,7 @@ export async function verifyOTPAndLogin(
       userId: user.id,
       appId: app.id,
       expiresAt,
-      deviceInfo: device_info || null,
+      deviceInfo: device_info ? (device_info as any) : null,
     },
   });
 
@@ -185,7 +185,7 @@ export async function verifyOTPAndLogin(
         app_id: app.id,
         client_id: app.clientId,
         device_info: device_info,
-      },
+      } as any,
     },
   });
 

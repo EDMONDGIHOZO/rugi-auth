@@ -20,7 +20,7 @@ export async function initiateGoogleOAuth(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   try {
     const { client_id, redirect_uri, state } = req.query as {
       client_id: string;
@@ -29,9 +29,10 @@ export async function initiateGoogleOAuth(
     };
 
     if (!client_id || !redirect_uri) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'client_id and redirect_uri are required',
       });
+      return;
     }
 
     // Verify client exists and get app
@@ -57,14 +58,15 @@ export async function handleGoogleCallback(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   try {
     const { code, client_id, client_secret, redirect_uri, device_info } = req.body;
 
     if (!code || !client_id || !redirect_uri) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'code, client_id, and redirect_uri are required',
       });
+      return;
     }
 
     // Verify client credentials
@@ -148,14 +150,15 @@ export async function getAvailableProviders(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   try {
     const { client_id } = req.query as { client_id: string };
 
     if (!client_id) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'client_id is required',
       });
+      return;
     }
 
     // Verify client and get app

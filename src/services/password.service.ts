@@ -10,13 +10,14 @@ const ARGON2_OPTIONS: argon2.Options = {
   memoryCost: 65536, // 64MB
   timeCost: 3,
   parallelism: 4,
+  raw: false,
 };
 
 /**
  * Hash a password using Argon2id
  */
 export async function hashPassword(password: string): Promise<string> {
-  return argon2.hash(password, ARGON2_OPTIONS);
+  return argon2.hash(password, ARGON2_OPTIONS as argon2.Options & { raw?: false });
 }
 
 /**

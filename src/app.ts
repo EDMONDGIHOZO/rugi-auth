@@ -35,7 +35,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(
   pinoHttp({
     logger,
-    customLogLevel: (req, res, err) => {
+    customLogLevel: (_req, res, err) => {
       if (res.statusCode >= 400 && res.statusCode < 500) {
         return "warn";
       } else if (res.statusCode >= 500 || err) {

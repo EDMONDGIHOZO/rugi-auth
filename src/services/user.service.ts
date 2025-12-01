@@ -225,8 +225,8 @@ export async function updateUser(
     const ownerRole = await prisma.userAppRole.findFirst({
       where: {
         userId: requestingUserId,
-        appId,
         role: {
+          appId,
           name: "owner",
         },
       },

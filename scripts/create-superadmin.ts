@@ -58,10 +58,10 @@ function questionHidden(prompt: string): Promise<string> {
     
     let password = '';
     
-    const onData = (char: string) => {
-      char = char.toString('utf8');
+    const onData = (char: string | Buffer) => {
+      const charStr = typeof char === 'string' ? char : char.toString('utf8');
       
-      switch (char) {
+      switch (charStr) {
         case '\n':
         case '\r':
         case '\u0004':
@@ -85,7 +85,7 @@ function questionHidden(prompt: string): Promise<string> {
           }
           break;
         default:
-          password += char;
+          password += charStr;
           stdout.write('*');
           break;
       }

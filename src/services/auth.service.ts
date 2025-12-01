@@ -178,7 +178,7 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
       userId: user.id,
       appId: app.id,
       expiresAt,
-      deviceInfo: input.device_info || null,
+      deviceInfo: input.device_info ? (input.device_info as any) : null,
     },
   });
 
@@ -191,7 +191,7 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
         app_id: app.id,
         client_id: app.clientId,
         device_info: input.device_info,
-      },
+      } as any,
     },
   });
 
@@ -277,7 +277,7 @@ export async function refresh(input: RefreshInput): Promise<AuthResponse> {
       userId: refreshTokenRecord.userId,
       appId: refreshTokenRecord.appId,
       expiresAt,
-      deviceInfo: refreshTokenRecord.deviceInfo,
+      deviceInfo: refreshTokenRecord.deviceInfo as any,
     },
   });
 

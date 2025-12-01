@@ -8,7 +8,7 @@ import { AuthError } from '../utils/errors';
  */
 export function clientVerificationMiddleware(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) {
   const clientId = req.body.client_id || req.query.client_id;

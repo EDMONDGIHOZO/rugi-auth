@@ -118,7 +118,7 @@ export async function checkAuthMethodController(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   try {
     const { appId, method } = req.params;
 
@@ -132,10 +132,11 @@ export async function checkAuthMethodController(
     ];
 
     if (!validMethods.includes(method)) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Invalid authentication method',
         valid_methods: validMethods,
       });
+      return;
     }
 
     const isEnabled = await isAuthMethodEnabled(

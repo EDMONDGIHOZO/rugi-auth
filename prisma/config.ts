@@ -1,9 +1,4 @@
-import { defineDatasource } from '@prisma/client/runtime/library';
-
-export default defineDatasource({
-  adapter: {
-    provider: 'postgresql',
-    url: process.env.DATABASE_URL!,
-  },
-});
+// Prisma datasource is configured in schema.prisma
+// This file is not needed for Prisma client usage
+export default {};
 

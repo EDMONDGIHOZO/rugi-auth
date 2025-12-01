@@ -8,7 +8,7 @@ import { isSuperAdmin } from '../services/role.service';
  */
 export async function superAdminMiddleware(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) {
   try {

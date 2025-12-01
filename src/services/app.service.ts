@@ -133,8 +133,8 @@ export async function updateApp(appId: string, input: UpdateAppInput) {
         // Find app owners (users with 'owner' role for this app)
         const owners = await prisma.userAppRole.findMany({
             where: {
-                appId: app.id,
                 role: {
+                    appId: app.id,
                     name: 'owner'
                 }
             },
@@ -239,7 +239,7 @@ export async function getAppUsers(appId: string, page: number = 1, limit: number
     const skip = (page - 1) * limit;
 
     // Get all users who have opted into this app
-    const [users, total] = await Promise.all([
+        const [users, total] = await Promise.all([
         prisma.user.findMany({
             where: {
                 optedInApps: {
@@ -254,7 +254,9 @@ export async function getAppUsers(appId: string, page: number = 1, limit: number
                 createdAt: true,
                 userAppRoles: {
                     where: {
-                        appId: appId,
+                        role: {
+                            appId: appId,
+                        },
                     },
                     include: {
                         role: true,

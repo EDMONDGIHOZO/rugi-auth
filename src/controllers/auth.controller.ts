@@ -84,10 +84,11 @@ export async function meController(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   try {
     if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      res.status(401).json({ error: 'Authentication required' });
+      return;
     }
 
     const user = await getCurrentUser(req.user.userId);
@@ -142,13 +143,14 @@ export async function verifyResetTokenController(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   try {
     const isValid = await verifyResetToken(req.body.token);
     if (!isValid) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Invalid or expired reset token',
       });
+      return;
     }
     res.json({
       valid: true,
