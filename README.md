@@ -62,10 +62,20 @@ cp .env.example .env
 Edit `.env` and configure:
 
 ```env
+# Database connection for the application
 DATABASE_URL="postgresql://user:password@localhost:5432/yebalabs_auth?schema=public"
+
+# PostgreSQL container configuration (required for docker-compose)
+POSTGRES_USER=yebalabs
+POSTGRES_PASSWORD=yebalabs_password
+POSTGRES_DB=yebalabs_auth
+
+# Application configuration
 JWT_ISSUER="yebalabs-auth"
 PORT=3000
 ```
+
+**Note**: If using Docker Compose, you must set `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` in your `.env` file. The `DATABASE_URL` should match these values (or point to your own PostgreSQL instance).
 
 ### 3. Start PostgreSQL
 
@@ -75,7 +85,9 @@ Using Docker Compose:
 docker-compose up -d postgres
 ```
 
-Or use your own PostgreSQL instance and update `DATABASE_URL` in `.env`.
+The Docker Compose file will read `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` from your `.env` file to configure the PostgreSQL container.
+
+Or use your own PostgreSQL instance and update `DATABASE_URL` in `.env` accordingly.
 
 ### 4. Generate RSA Keys
 
@@ -403,14 +415,115 @@ npm run prisma:migrate -- --name migration_name
 
 ## Production Deployment
 
-1. Set `NODE_ENV=production`
-2. Use a managed PostgreSQL database
-3. Store RSA keys securely (environment variables or secret management)
-4. Configure proper CORS origins
-5. Set up monitoring and logging
-6. Use a reverse proxy (nginx) with HTTPS
-7. Enable database connection pooling
-8. Set up automated backups
+### Prerequisites
+
+- Node.js 18+ installed on production server
+- PM2 installed globally: `npm install -g pm2`
+- PostgreSQL database (managed or self-hosted)
+- RSA keys generated and securely stored
+
+### Deployment Steps
+
+1. **Build the application:**
+   ```bash
+   npm install --production
+   npm run build
+   npm run prisma:generate
+   ```
+
+2. **Set up environment variables:**
+   Create a `.env` file with production values:
+   ```env
+   NODE_ENV=production
+   PORT=3000
+   DATABASE_URL="postgresql://user:password@host:5432/dbname?schema=public"
+   JWT_ISSUER="yebalabs-auth"
+   CORS_ORIGIN="https://yourdomain.com"
+   # ... other required variables
+   ```
+
+3. **Run database migrations:**
+   ```bash
+   npm run prisma:migrate deploy
+   ```
+
+4. **Start with PM2:**
+   ```bash
+   npm run start:pm2
+   ```
+
+   Or manually:
+   ```bash
+   pm2 start ecosystem.config.js
+   ```
+
+5. **Save PM2 configuration:**
+   ```bash
+   pm2 save
+   pm2 startup  # Follow instructions to enable auto-start on reboot
+   ```
+
+### PM2 Management Commands
+
+- **Start:** `npm run start:pm2` or `pm2 start ecosystem.config.js`
+- **Stop:** `npm run stop:pm2` or `pm2 stop yebalabs-auth`
+- **Restart:** `npm run restart:pm2` or `pm2 restart yebalabs-auth`
+- **Reload (zero-downtime):** `npm run reload:pm2` or `pm2 reload yebalabs-auth`
+- **View logs:** `npm run logs:pm2` or `pm2 logs yebalabs-auth`
+- **Monitor:** `npm run monitor:pm2` or `pm2 monit`
+- **Delete:** `npm run delete:pm2` or `pm2 delete yebalabs-auth`
+
+### PM2 Configuration
+
+The `ecosystem.config.js` file is configured with:
+- **Cluster mode**: Uses all available CPU cores for load balancing
+- **Auto-restart**: Automatically restarts on crashes
+- **Memory limit**: Restarts if memory exceeds 1GB
+- **Logging**: Logs stored in `./logs/` directory
+- **Graceful shutdown**: Handles SIGTERM/SIGINT signals
+
+### Additional Production Considerations
+
+1. **Reverse Proxy**: Use nginx or similar to handle HTTPS and route traffic
+2. **Monitoring**: Set up PM2 monitoring or integrate with external monitoring services
+3. **Log Rotation**: Configure log rotation for PM2 logs
+4. **Database**: Use a managed PostgreSQL service or configure connection pooling
+5. **RSA Keys**: Store keys securely (environment variables, secret management, or encrypted storage)
+6. **Backups**: Set up automated database backups
+7. **Health Checks**: Monitor `/health` endpoint
+8. **Rate Limiting**: Adjust rate limits based on production traffic
+9. **CORS**: Configure allowed origins for your frontend domains
+10. **HTTPS**: Always use HTTPS in production (configure at reverse proxy level)
+
+### Example Nginx Configuration
+
+```nginx
+server {
+    listen 80;
+    server_name auth.yourdomain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name auth.yourdomain.com;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
 
 ## License
 
