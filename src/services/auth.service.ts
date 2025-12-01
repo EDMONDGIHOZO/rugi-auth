@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../config/database';
 import { hashPassword, verifyPassword } from './password.service';
 import { generateAccessToken } from './token.service';
-import { getUserRoles } from './role.service';
+import { getUserRoles, isSuperAdmin } from './role.service';
 import { verifyClientCredentials } from './app.service';
 import {
   AuthError,
@@ -104,6 +104,14 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
     input.client_secret
   );
 
+  // Check if user is a superadmin
+  const isUserSuperAdmin = await isSuperAdmin(user.id);
+
+  // Check if user has opted into this app (skip for superadmins)
+  if (!isUserSuperAdmin && !user.optedInApps.includes(app.id)) {
+    throw new AuthError('User does not have access to this application');
+  }
+
   // Get user roles for this app
   const roles = await getUserRoles(user.id, app.id);
 
@@ -186,6 +194,14 @@ export async function refresh(input: RefreshInput): Promise<AuthResponse> {
   // Verify client_id matches
   if (refreshTokenRecord.app.clientId !== input.client_id) {
     throw new AuthError('Invalid client for refresh token');
+  }
+
+  // Check if user is a superadmin
+  const isUserSuperAdmin = await isSuperAdmin(refreshTokenRecord.userId);
+
+  // Check if user still has access to this app (skip for superadmins)
+  if (!isUserSuperAdmin && !refreshTokenRecord.user.optedInApps.includes(refreshTokenRecord.appId)) {
+    throw new AuthError('User no longer has access to this application');
   }
 
   // Revoke old refresh token (token rotation)

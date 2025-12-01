@@ -130,3 +130,22 @@ export async function getUserRolesByApp(userId: string) {
   return userAppRoles;
 }
 
+/**
+ * Check if a user is a superadmin
+ * A user is considered a superadmin if they have 'owner' or 'admin' role in any app
+ */
+export async function isSuperAdmin(userId: string): Promise<boolean> {
+  const superAdminRoles = await prisma.userAppRole.findFirst({
+    where: {
+      userId,
+      role: {
+        name: {
+          in: ['owner', 'admin'],
+        },
+      },
+    },
+  });
+
+  return superAdminRoles !== null;
+}
+

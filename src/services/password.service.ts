@@ -1,4 +1,5 @@
 import argon2 from 'argon2';
+import crypto from 'crypto';
 
 /**
  * Argon2id configuration for password hashing
@@ -31,5 +32,36 @@ export async function verifyPassword(
   } catch (error) {
     return false;
   }
+}
+
+/**
+ * Generate a secure random password
+ * Generates a password with uppercase, lowercase, numbers, and special characters
+ */
+export function generateSecurePassword(length: number = 16): string {
+  const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
+  const numberChars = '0123456789';
+  const specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+  
+  const allChars = uppercaseChars + lowercaseChars + numberChars + specialChars;
+  
+  // Ensure at least one character from each category
+  let password = '';
+  password += uppercaseChars[crypto.randomInt(0, uppercaseChars.length)];
+  password += lowercaseChars[crypto.randomInt(0, lowercaseChars.length)];
+  password += numberChars[crypto.randomInt(0, numberChars.length)];
+  password += specialChars[crypto.randomInt(0, specialChars.length)];
+  
+  // Fill the rest randomly
+  for (let i = password.length; i < length; i++) {
+    password += allChars[crypto.randomInt(0, allChars.length)];
+  }
+  
+  // Shuffle the password to avoid predictable patterns
+  return password
+    .split('')
+    .sort(() => crypto.randomInt(0, 2) - 0.5)
+    .join('');
 }
 

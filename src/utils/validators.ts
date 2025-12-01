@@ -100,6 +100,19 @@ export const userValidators = {
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(20),
   }),
+
+  invite: Joi.object({
+    email: Joi.string().email().required().max(255),
+    app_ids: Joi.array().items(Joi.string().uuid()).min(1).required(),
+  }),
+
+  update: Joi.object({
+    email: Joi.string().email().max(255).optional(),
+    password: Joi.string().min(8).max(128).optional(),
+    isEmailVerified: Joi.boolean().optional(),
+    mfaEnabled: Joi.boolean().optional(),
+    app_id: Joi.string().uuid().optional(),
+  }).min(1),
 };
 
 /**

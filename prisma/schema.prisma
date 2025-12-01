@@ -7,6 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -16,6 +17,7 @@ model User {
   isEmailVerified Boolean   @default(false) @map("is_email_verified")
   mfaEnabled      Boolean   @default(false) @map("mfa_enabled")
   mfaSecret       String?   @map("mfa_secret") @db.Text
+  optedInApps     String[]  @default([]) @map("opted_in_apps") @db.Uuid
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
 
   userAppRoles       UserAppRole[]
@@ -120,6 +122,7 @@ enum AuditAction {
   PASSWORD_RESET_COMPLETE
   OTP_REQUEST
   OTP_LOGIN
+  USER_INVITE
 }
 
 model PasswordResetToken {
