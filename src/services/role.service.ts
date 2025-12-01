@@ -2,16 +2,24 @@ import { prisma } from '../config/database';
 import { NotFoundError, ConflictError } from '../utils/errors';
 
 /**
- * Find or create a role by name
+ * Find or create a role by name for a specific app
  */
-export async function findOrCreateRole(roleName: string) {
+export async function findOrCreateRole(appId: string, roleName: string) {
   let role = await prisma.role.findUnique({
-    where: { name: roleName },
+    where: {
+      appId_name: {
+        appId,
+        name: roleName,
+      },
+    },
   });
 
   if (!role) {
     role = await prisma.role.create({
-      data: { name: roleName },
+      data: {
+        appId,
+        name: roleName,
+      },
     });
   }
 
@@ -43,8 +51,8 @@ export async function assignUserRole(
     throw new NotFoundError('Application not found');
   }
 
-  // Find or create role
-  const role = await findOrCreateRole(roleName);
+  // Find or create role for this app
+  const role = await findOrCreateRole(appId, roleName);
 
   // Check if role already assigned
   const existing = await prisma.userAppRole.findUnique({
@@ -97,7 +105,9 @@ export async function getUserRoles(userId: string, appId: string) {
   const userAppRoles = await prisma.userAppRole.findMany({
     where: {
       userId,
-      appId,
+      role: {
+        appId,
+      },
     },
     include: {
       role: true,
@@ -116,12 +126,15 @@ export async function getUserRolesByApp(userId: string) {
       userId,
     },
     include: {
-      role: true,
-      app: {
-        select: {
-          id: true,
-          name: true,
-          clientId: true,
+      role: {
+        include: {
+          app: {
+            select: {
+              id: true,
+              name: true,
+              clientId: true,
+            },
+          },
         },
       },
     },
@@ -143,6 +156,9 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
           in: ['owner', 'admin'],
         },
       },
+    },
+    include: {
+      role: true,
     },
   });
 

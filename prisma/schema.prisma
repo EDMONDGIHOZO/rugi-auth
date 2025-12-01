@@ -11,13 +11,19 @@ datasource db {
 }
 
 model User {
-  id              String    @id @default(uuid()) @db.Uuid
-  email           String    @unique @db.VarChar(255)
-  passwordHash    String    @map("password_hash") @db.Text
-  isEmailVerified Boolean   @default(false) @map("is_email_verified")
-  mfaEnabled      Boolean   @default(false) @map("mfa_enabled")
-  mfaSecret       String?   @map("mfa_secret") @db.Text
-  optedInApps     String[]  @default([]) @map("opted_in_apps") @db.Uuid
+  id              String            @id @default(uuid()) @db.Uuid
+  email           String            @unique @db.VarChar(255)
+  passwordHash    String?           @map("password_hash") @db.Text
+  isEmailVerified Boolean           @default(false) @map("is_email_verified")
+  mfaEnabled      Boolean           @default(false) @map("mfa_enabled")
+  mfaSecret       String?           @map("mfa_secret") @db.Text
+  optedInApps     String[]          @default([]) @map("opted_in_apps") @db.Uuid
+  
+  // OAuth & Registration tracking
+  registrationMethod RegistrationMethod @default(EMAIL_PASSWORD) @map("registration_method")
+  oauthProvider      String?            @map("oauth_provider") @db.VarChar(50)
+  oauthProviderId    String?            @map("oauth_provider_id") @db.VarChar(255)
+  
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
 
   userAppRoles       UserAppRole[]
@@ -29,6 +35,16 @@ model User {
 
   @@map("users")
   @@index([email])
+  @@index([oauthProvider, oauthProviderId])
+}
+
+enum RegistrationMethod {
+  EMAIL_PASSWORD
+  EMAIL_OTP
+  GOOGLE
+  GITHUB
+  MICROSOFT
+  FACEBOOK
 }
 
 model App {
@@ -40,8 +56,9 @@ model App {
   redirectUris     Json      @map("redirect_uris")
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
 
-  userAppRoles  UserAppRole[]
   refreshTokens RefreshToken[]
+  authSettings  AppAuthSettings?
+  roles         Role[]
 
   @@map("apps")
   @@index([clientId])
@@ -53,30 +70,34 @@ enum AppType {
 }
 
 model Role {
-  id        Int    @id @default(autoincrement())
-  name      String @unique @db.VarChar(100)
+  id        Int      @id @default(autoincrement())
+  appId     String   @map("app_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
 
+  app          App           @relation(fields: [appId], references: [id], onDelete: Cascade)
   userAppRoles UserAppRole[]
 
+  @@unique([appId, name])
   @@map("roles")
+  @@index([appId])
 }
 
 model UserAppRole {
   id         String   @id @default(uuid()) @db.Uuid
   userId     String   @map("user_id") @db.Uuid
-  appId      String   @map("app_id") @db.Uuid
   roleId     Int      @map("role_id")
   assignedBy String?  @map("assigned_by") @db.Uuid
   assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamp(6)
 
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  app        App      @relation(fields: [appId], references: [id], onDelete: Cascade)
   role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
   assignedByUser User? @relation("AssignedBy", fields: [assignedBy], references: [id])
 
   @@map("user_app_roles")
-  @@unique([userId, appId, roleId])
-  @@index([userId, appId])
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
 }
 
 model RefreshToken {
@@ -157,5 +178,48 @@ model EmailOTP {
   @@index([code])
   @@index([expiresAt])
   @@index([used])
+}
+
+model AppAuthSettings {
+  id        String   @id @default(uuid()) @db.Uuid
+  appId     String   @unique @map("app_id") @db.Uuid
+  
+  // Email + Password authentication
+  emailPasswordEnabled Boolean @default(true) @map("email_password_enabled")
+  
+  // Email + OTP authentication
+  emailOtpEnabled Boolean @default(false) @map("email_otp_enabled")
+  
+  // Google OAuth
+  googleAuthEnabled Boolean @default(false) @map("google_auth_enabled")
+  googleClientId    String? @map("google_client_id") @db.VarChar(255)
+  googleClientSecret String? @map("google_client_secret") @db.Text
+  
+  // GitHub OAuth (for future use)
+  githubAuthEnabled Boolean @default(false) @map("github_auth_enabled")
+  githubClientId    String? @map("github_client_id") @db.VarChar(255)
+  githubClientSecret String? @map("github_client_secret") @db.Text
+  
+  // Microsoft OAuth (for future use)
+  microsoftAuthEnabled Boolean @default(false) @map("microsoft_auth_enabled")
+  microsoftClientId    String? @map("microsoft_client_id") @db.VarChar(255)
+  microsoftClientSecret String? @map("microsoft_client_secret") @db.Text
+  
+  // Facebook OAuth (for future use)
+  facebookAuthEnabled Boolean @default(false) @map("facebook_auth_enabled")
+  facebookClientId    String? @map("facebook_client_id") @db.VarChar(255)
+  facebookClientSecret String? @map("facebook_client_secret") @db.Text
+  
+  // Additional settings
+  requireEmailVerification Boolean @default(true) @map("require_email_verification")
+  allowRegistration Boolean @default(true) @map("allow_registration")
+  
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_auth_settings")
+  @@index([appId])
 }
 

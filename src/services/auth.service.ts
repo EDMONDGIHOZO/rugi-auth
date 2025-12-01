@@ -4,16 +4,19 @@ import { hashPassword, verifyPassword } from './password.service';
 import { generateAccessToken } from './token.service';
 import { getUserRoles, isSuperAdmin } from './role.service';
 import { verifyClientCredentials } from './app.service';
+import { isAuthMethodEnabled } from './auth-settings.service';
 import {
   AuthError,
   ConflictError,
   NotFoundError,
 } from '../utils/errors';
-import { AuditAction } from '@prisma/client';
+import { AuditAction, RegistrationMethod } from '@prisma/client';
 
 export interface RegisterInput {
   email: string;
   password: string;
+  client_id: string;
+  client_secret?: string;
 }
 
 export interface LoginInput {
@@ -40,6 +43,27 @@ export interface AuthResponse {
  * Register a new user
  */
 export async function register(input: RegisterInput) {
+  // Verify client credentials
+  const app = await verifyClientCredentials(
+    input.client_id,
+    input.client_secret
+  );
+
+  // Check if registration is allowed for this app
+  const settings = await prisma.appAuthSettings.findUnique({
+    where: { appId: app.id },
+  });
+
+  if (settings && !settings.allowRegistration) {
+    throw new AuthError('Registration is not allowed for this application');
+  }
+
+  // Check if email+password authentication is enabled
+  const isPasswordAuthEnabled = await isAuthMethodEnabled(app.id, 'email_password');
+  if (!isPasswordAuthEnabled) {
+    throw new AuthError('Email/password registration is not enabled for this application');
+  }
+
   // Check if user already exists
   const existing = await prisma.user.findUnique({
     where: { email: input.email },
@@ -57,6 +81,8 @@ export async function register(input: RegisterInput) {
     data: {
       email: input.email,
       passwordHash,
+      registrationMethod: RegistrationMethod.EMAIL_PASSWORD,
+      optedInApps: [app.id],
     },
   });
 
@@ -67,6 +93,9 @@ export async function register(input: RegisterInput) {
       action: AuditAction.REGISTER,
       metadata: {
         email: user.email,
+        app_id: app.id,
+        client_id: app.clientId,
+        registration_method: 'EMAIL_PASSWORD',
       },
     },
   });
@@ -74,6 +103,7 @@ export async function register(input: RegisterInput) {
   return {
     id: user.id,
     email: user.email,
+    registration_method: 'EMAIL_PASSWORD',
     created_at: user.createdAt,
   };
 }
@@ -82,6 +112,18 @@ export async function register(input: RegisterInput) {
  * Login a user and issue tokens
  */
 export async function login(input: LoginInput): Promise<AuthResponse> {
+  // Verify client credentials first
+  const app = await verifyClientCredentials(
+    input.client_id,
+    input.client_secret
+  );
+
+  // Check if email+password authentication is enabled
+  const isPasswordAuthEnabled = await isAuthMethodEnabled(app.id, 'email_password');
+  if (!isPasswordAuthEnabled) {
+    throw new AuthError('Email/password authentication is not enabled for this application');
+  }
+
   // Find user
   const user = await prisma.user.findUnique({
     where: { email: input.email },
@@ -93,16 +135,14 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
   }
 
   // Verify password
+  if (!user.passwordHash) {
+    throw new AuthError('Invalid credentials');
+  }
+  
   const isValid = await verifyPassword(user.passwordHash, input.password);
   if (!isValid) {
     throw new AuthError('Invalid credentials');
   }
-
-  // Verify client credentials
-  const app = await verifyClientCredentials(
-    input.client_id,
-    input.client_secret
-  );
 
   // Check if user is a superadmin
   const isUserSuperAdmin = await isSuperAdmin(user.id);

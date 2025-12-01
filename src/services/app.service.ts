@@ -10,6 +10,12 @@ export interface CreateAppInput {
     redirect_uris: string[];
 }
 
+export interface UpdateAppInput {
+    name?: string;
+    type?: 'PUBLIC' | 'CONFIDENTIAL';
+    redirect_uris?: string[];
+}
+
 export interface AppWithSecret {
     id: string;
     name: string;
@@ -84,6 +90,104 @@ export async function findAppById(appId: string) {
 }
 
 /**
+ * Update an app by ID
+ */
+export async function updateApp(appId: string, input: UpdateAppInput) {
+    // Verify app exists
+    const currentApp = await findAppById(appId);
+
+    // Check if transitioning from PUBLIC to CONFIDENTIAL
+    const isTransitioningToConfidential = 
+        input.type === 'CONFIDENTIAL' && 
+        currentApp.type === 'PUBLIC';
+
+    // Build update data
+    const updateData: any = {};
+    let newClientSecret: string | null = null;
+
+    if (input.name !== undefined) {
+        updateData.name = input.name;
+    }
+
+    if (input.type !== undefined) {
+        updateData.type = input.type as AppType;
+
+        // Generate client secret if transitioning to CONFIDENTIAL
+        if (isTransitioningToConfidential) {
+            newClientSecret = uuidv4() + uuidv4(); // 64-character secret
+            updateData.clientSecretHash = await hashPassword(newClientSecret);
+        }
+    }
+
+    if (input.redirect_uris !== undefined) {
+        updateData.redirectUris = input.redirect_uris;
+    }
+
+    const app = await prisma.app.update({
+        where: {id: appId},
+        data: updateData,
+    });
+
+    // If transitioned to CONFIDENTIAL, email the secret to app owner(s)
+    if (isTransitioningToConfidential && newClientSecret) {
+        // Find app owners (users with 'owner' role for this app)
+        const owners = await prisma.userAppRole.findMany({
+            where: {
+                appId: app.id,
+                role: {
+                    name: 'owner'
+                }
+            },
+            include: {
+                user: {
+                    select: {
+                        email: true,
+                    }
+                }
+            }
+        });
+
+        // Send email to all owners
+        const { sendClientSecretEmail, isEmailServiceAvailable } = await import('./email.service');
+        
+        if (isEmailServiceAvailable()) {
+            for (const owner of owners) {
+                try {
+                    await sendClientSecretEmail(
+                        owner.user.email,
+                        app.name,
+                        app.clientId,
+                        newClientSecret
+                    );
+                } catch (error) {
+                    console.error(`Failed to send client secret email to ${owner.user.email}:`, error);
+                }
+            }
+        }
+
+        // Return the secret in the response (only time it's shown)
+        return {
+            id: app.id,
+            name: app.name,
+            client_id: app.clientId,
+            client_secret: newClientSecret,
+            type: app.type,
+            redirect_uris: app.redirectUris as string[],
+            created_at: app.createdAt,
+        };
+    }
+
+    return {
+        id: app.id,
+        name: app.name,
+        client_id: app.clientId,
+        type: app.type,
+        redirect_uris: app.redirectUris as string[],
+        created_at: app.createdAt,
+    };
+}
+
+/**
  * Delete app by id.
  */
 export async function deleteAppById(appId: string) {
@@ -123,5 +227,77 @@ export async function verifyClientCredentials(
     }
 
     return app;
+}
+
+/**
+ * Get all users that have opted into an app with their roles
+ */
+export async function getAppUsers(appId: string, page: number = 1, limit: number = 20) {
+    // Verify app exists
+    const app = await findAppById(appId);
+
+    const skip = (page - 1) * limit;
+
+    // Get all users who have opted into this app
+    const [users, total] = await Promise.all([
+        prisma.user.findMany({
+            where: {
+                optedInApps: {
+                    has: appId,
+                },
+            },
+            select: {
+                id: true,
+                email: true,
+                isEmailVerified: true,
+                mfaEnabled: true,
+                createdAt: true,
+                userAppRoles: {
+                    where: {
+                        appId: appId,
+                    },
+                    include: {
+                        role: true,
+                    },
+                },
+            },
+            skip,
+            take: limit,
+            orderBy: {
+                createdAt: 'desc',
+            },
+        }),
+        prisma.user.count({
+            where: {
+                optedInApps: {
+                    has: appId,
+                },
+            },
+        }),
+    ]);
+
+    return {
+        app: {
+            id: app.id,
+            name: app.name,
+            clientId: app.clientId,
+            type: app.type,
+            redirectUris: app.redirectUris as string[],
+        },
+        users: users.map((user) => ({
+            id: user.id,
+            email: user.email,
+            isEmailVerified: user.isEmailVerified,
+            mfaEnabled: user.mfaEnabled,
+            createdAt: user.createdAt,
+            roles: user.userAppRoles.map((uar) => uar.role.name),
+        })),
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+        },
+    };
 }
 

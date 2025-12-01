@@ -46,13 +46,7 @@ export async function assignUserRoleController(
 
         res.status(201).json({
             message: 'Role assigned successfully',
-            userAppRole: {
-                id: userAppRole.id,
-                user: userAppRole.user,
-                app: userAppRole.app,
-                role: userAppRole.role,
-                assigned_at: userAppRole.assignedAt,
-            },
+            userAppRole
         });
     } catch (error) {
         next(error);
@@ -127,8 +121,8 @@ export async function inviteUserController(
         const result = await inviteUser({email, app_ids});
 
         const appCount = result.apps.length;
-        const message = result.is_new_user 
-            ? `User invited and created successfully with access to ${appCount} app(s)` 
+        const message = result.is_new_user
+            ? `User invited and created successfully with access to ${appCount} app(s)`
             : `User invited to ${appCount} app(s) successfully`;
 
         res.status(201).json({
@@ -172,9 +166,9 @@ export async function getUserController(
                 roles: user.userAppRoles.map((uar) => ({
                     role: uar.role.name,
                     app: {
-                        id: uar.app.id,
-                        name: uar.app.name,
-                        clientId: uar.app.clientId,
+                        id: uar.role.app.id,
+                        name: uar.role.app.name,
+                        clientId: uar.role.app.clientId,
                     },
                     assignedAt: uar.assignedAt,
                 })),

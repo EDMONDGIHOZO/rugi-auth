@@ -2,28 +2,33 @@ import Joi from 'joi';
 
 const envSchema = Joi.object({
   NODE_ENV: Joi.string()
-    .valid('development', 'production', 'test')
-    .default('development'),
+    .valid("development", "production", "test")
+    .default("development"),
   PORT: Joi.number().port().default(3000),
   DATABASE_URL: Joi.string().required(),
-  JWT_ISSUER: Joi.string().default('yebalabs-auth'),
-  JWT_ACCESS_TOKEN_EXPIRY: Joi.string().default('10m'),
-  JWT_REFRESH_TOKEN_EXPIRY: Joi.string().default('7d'),
-  PRIVATE_KEY_PATH: Joi.string().default('./keys/private.pem'),
-  PUBLIC_KEY_PATH: Joi.string().default('./keys/public.pem'),
-  CORS_ORIGIN: Joi.string().default('*'),
+  JWT_ISSUER: Joi.string().default("yebalabs-auth"),
+  JWT_ACCESS_TOKEN_EXPIRY: Joi.string().default("10m"),
+  JWT_REFRESH_TOKEN_EXPIRY: Joi.string().default("7d"),
+  PRIVATE_KEY_PATH: Joi.string().default("./keys/private.pem"),
+  PUBLIC_KEY_PATH: Joi.string().default("./keys/public.pem"),
+  CORS_ORIGIN: Joi.string().default("*"),
   RATE_LIMIT_WINDOW_MS: Joi.number().positive().default(60000),
-  RATE_LIMIT_MAX_REQUESTS: Joi.number().positive().default(5),
+  RATE_LIMIT_MAX_REQUESTS: Joi.number().positive().default(100),
   LOG_LEVEL: Joi.string()
-    .valid('fatal', 'error', 'warn', 'info', 'debug', 'trace')
-    .default('info'),
-  // Azure Communication Services Email
-  AZURE_COMMUNICATION_CONNECTION_STRING: Joi.string().optional(),
-  AZURE_COMMUNICATION_SENDER_EMAIL: Joi.string().email().optional(),
+    .valid("fatal", "error", "warn", "info", "debug", "trace")
+    .default("info"),
+  // SMTP Email Configuration
+  SMTP_HOST: Joi.string().optional(),
+  SMTP_PORT: Joi.number().port().optional().default(587),
+  SMTP_SECURE: Joi.boolean().optional().default(false),
+  SMTP_USER: Joi.string().optional(),
+  SMTP_PASSWORD: Joi.string().optional(),
+  SMTP_FROM_EMAIL: Joi.string().email().optional(),
+  SMTP_FROM_NAME: Joi.string().optional().default("YebaLabs Auth"),
   // Frontend URLs for email links
-  FRONTEND_URL: Joi.string().uri().default('http://localhost:3000'),
-  PASSWORD_RESET_TOKEN_EXPIRY: Joi.string().default('1h'),
-  OTP_EXPIRY: Joi.string().default('10m'),
+  FRONTEND_URL: Joi.string().uri().default("http://localhost:3000"),
+  PASSWORD_RESET_TOKEN_EXPIRY: Joi.string().default("1h"),
+  OTP_EXPIRY: Joi.string().default("10m"),
   OTP_LENGTH: Joi.number().integer().min(4).max(8).default(6),
 }).unknown();
 
@@ -55,8 +60,17 @@ export const env = {
   },
   logLevel: value.LOG_LEVEL,
   email: {
-    azureConnectionString: value.AZURE_COMMUNICATION_CONNECTION_STRING,
-    senderEmail: value.AZURE_COMMUNICATION_SENDER_EMAIL,
+    smtp: {
+      host: value.SMTP_HOST,
+      port: value.SMTP_PORT,
+      secure: value.SMTP_SECURE,
+      user: value.SMTP_USER,
+      password: value.SMTP_PASSWORD,
+    },
+    from: {
+      email: value.SMTP_FROM_EMAIL,
+      name: value.SMTP_FROM_NAME,
+    },
   },
   frontendUrl: value.FRONTEND_URL,
   passwordReset: {

@@ -86,32 +86,29 @@ export async function inviteUser(input: InviteUserInput) {
     });
   }
 
-  // Assign default 'public' role for each app
-  const publicRole = await findOrCreateRole("public");
+  // Assign default 'user' role for each app
+  for (const appId of app_ids) {
+    const userRole = await findOrCreateRole(appId, "user");
 
-  // Get existing roles to avoid duplicates
-  const existingRoles = await prisma.userAppRole.findMany({
-    where: {
-      userId: user.id,
-      appId: { in: app_ids },
-      roleId: publicRole.id,
-    },
-  });
-
-  const existingAppIds = existingRoles.map((role) => role.appId);
-  const appsNeedingRole = app_ids.filter(
-    (appId) => !existingAppIds.includes(appId)
-  );
-
-  // Create roles for apps that don't have them
-  if (appsNeedingRole.length > 0) {
-    await prisma.userAppRole.createMany({
-      data: appsNeedingRole.map((appId) => ({
-        userId: user!.id,
-        appId,
-        roleId: publicRole.id,
-      })),
+    // Check if user already has this role
+    const existingRole = await prisma.userAppRole.findUnique({
+      where: {
+        userId_roleId: {
+          userId: user.id,
+          roleId: userRole.id,
+        },
+      },
     });
+
+    // Only create if doesn't exist
+    if (!existingRole) {
+      await prisma.userAppRole.create({
+        data: {
+          userId: user.id,
+          roleId: userRole.id,
+        },
+      });
+    }
   }
 
   // Audit log
@@ -137,7 +134,7 @@ export async function inviteUser(input: InviteUserInput) {
       id: app.id,
       name: app.name,
     })),
-    role: "public",
+    role: "user",
     opted_in_apps: user.optedInApps,
   };
 }
@@ -157,12 +154,15 @@ export async function findUserById(userId: string) {
       createdAt: true,
       userAppRoles: {
         include: {
-          role: true,
-          app: {
-            select: {
-              id: true,
-              name: true,
-              clientId: true,
+          role: {
+            include: {
+              app: {
+                select: {
+                  id: true,
+                  name: true,
+                  clientId: true,
+                },
+              },
             },
           },
         },

@@ -1,23 +1,32 @@
-import { EmailClient } from '@azure/communication-email';
+import nodemailer, { Transporter } from 'nodemailer';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
 
-let emailClient: EmailClient | null = null;
+let emailTransporter: Transporter | null = null;
 
 /**
- * Initialize Azure Communication Services Email client
+ * Initialize nodemailer SMTP transporter
  */
 export function initializeEmailClient(): void {
-  if (!env.email.azureConnectionString) {
-    logger.warn('Azure Communication Services connection string not provided. Email service will be disabled.');
+  if (!env.email.smtp.host || !env.email.from.email) {
+    logger.warn('SMTP configuration not provided. Email service will be disabled.');
     return;
   }
 
   try {
-    emailClient = new EmailClient(env.email.azureConnectionString);
-    logger.info('Azure Communication Services Email client initialized');
+    emailTransporter = nodemailer.createTransport({
+      host: env.email.smtp.host,
+      port: env.email.smtp.port,
+      secure: env.email.smtp.secure, // true for 465, false for other ports
+      auth: env.email.smtp.user && env.email.smtp.password ? {
+        user: env.email.smtp.user,
+        pass: env.email.smtp.password,
+      } : undefined,
+    });
+
+    logger.info('Nodemailer SMTP transporter initialized');
   } catch (error) {
-    logger.error({ error }, 'Failed to initialize email client');
+    logger.error({ error }, 'Failed to initialize email transporter');
     throw error;
   }
 }
@@ -26,11 +35,11 @@ export function initializeEmailClient(): void {
  * Check if email service is available
  */
 export function isEmailServiceAvailable(): boolean {
-  return emailClient !== null && env.email.senderEmail !== undefined;
+  return emailTransporter !== null && env.email.from.email !== undefined;
 }
 
 /**
- * Send an email using Azure Communication Services
+ * Send an email using nodemailer
  */
 export async function sendEmail(
   to: string,
@@ -42,31 +51,30 @@ export async function sendEmail(
     throw new Error('Email service is not configured');
   }
 
-  if (!emailClient) {
-    throw new Error('Email client not initialized');
+  if (!emailTransporter) {
+    throw new Error('Email transporter not initialized');
   }
 
   try {
-    const emailMessage = {
-      senderAddress: env.email.senderEmail!,
-      content: {
-        subject,
-        html: htmlContent,
-        plainText: textContent || htmlContent.replace(/<[^>]*>/g, ''),
+    const mailOptions = {
+      from: {
+        name: env.email.from.name,
+        address: env.email.from.email!,
       },
-      recipients: {
-        to: [{ address: to }],
-      },
+      to,
+      subject,
+      html: htmlContent,
+      text: textContent || htmlContent.replace(/<[^>]*>/g, ''),
     };
 
-    const poller = await emailClient.beginSend(emailMessage);
-    const result = await poller.pollUntilDone();
+    const info = await emailTransporter.sendMail(mailOptions);
 
     logger.info(
       {
-        messageId: result.id,
+        messageId: info.messageId,
         to,
         subject,
+        response: info.response,
       },
       'Email sent successfully'
     );
@@ -178,6 +186,84 @@ export async function sendOTPEmail(
 ): Promise<void> {
   const subject = 'Your Login Code';
   const htmlContent = generateOTPEmail(otpCode, expiresInMinutes);
+  
+  await sendEmail(email, subject, htmlContent);
+}
+
+/**
+ * Generate HTML email template for client secret
+ */
+export function generateClientSecretEmail(
+  appName: string,
+  clientId: string,
+  clientSecret: string
+): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Client Secret</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #f4f4f4; padding: 20px; border-radius: 5px;">
+    <h1 style="color: #2c3e50;">🔐 Confidential App Credentials</h1>
+    <p>Your application <strong>${appName}</strong> has been updated to <strong>CONFIDENTIAL</strong> type.</p>
+    <p>A new client secret has been generated. Please store this securely as it will not be shown again.</p>
+    
+    <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #e74c3c;">
+      <h3 style="color: #e74c3c; margin-top: 0;">⚠️ Important Security Information</h3>
+      <p style="margin: 10px 0;"><strong>Application Name:</strong> ${appName}</p>
+      <p style="margin: 10px 0;"><strong>Client ID:</strong></p>
+      <code style="background-color: #ecf0f1; padding: 8px 12px; border-radius: 3px; display: block; margin: 5px 0; word-break: break-all; font-family: 'Courier New', monospace;">${clientId}</code>
+      
+      <p style="margin: 10px 0;"><strong>Client Secret:</strong></p>
+      <code style="background-color: #ffe6e6; padding: 8px 12px; border-radius: 3px; display: block; margin: 5px 0; word-break: break-all; font-family: 'Courier New', monospace; color: #c0392b;">${clientSecret}</code>
+    </div>
+
+    <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+      <h4 style="color: #856404; margin-top: 0;">🔒 Security Best Practices</h4>
+      <ul style="color: #856404; margin: 0; padding-left: 20px;">
+        <li>Store this secret in a secure location (e.g., password manager, secrets vault)</li>
+        <li>Never commit this secret to version control</li>
+        <li>Use environment variables to store it in your application</li>
+        <li>This secret will be required for all API requests from your app</li>
+        <li>If compromised, contact support immediately to rotate the secret</li>
+      </ul>
+    </div>
+
+    <div style="background-color: #d1ecf1; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #17a2b8;">
+      <h4 style="color: #0c5460; margin-top: 0;">📝 Usage Example</h4>
+      <p style="color: #0c5460; margin: 5px 0;">Include both credentials in your authentication requests:</p>
+      <pre style="background-color: #fff; padding: 10px; border-radius: 3px; overflow-x: auto; font-size: 12px;"><code>{
+  "client_id": "${clientId}",
+  "client_secret": "${clientSecret}",
+  ...
+}</code></pre>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+    <p style="color: #95a5a6; font-size: 12px;">
+      This is an automated message. If you did not request this change or have any concerns, please contact support immediately.
+    </p>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Send client secret email
+ */
+export async function sendClientSecretEmail(
+  email: string,
+  appName: string,
+  clientId: string,
+  clientSecret: string
+): Promise<void> {
+  const subject = `🔐 Client Secret for ${appName}`;
+  const htmlContent = generateClientSecretEmail(appName, clientId, clientSecret);
   
   await sendEmail(email, subject, htmlContent);
 }

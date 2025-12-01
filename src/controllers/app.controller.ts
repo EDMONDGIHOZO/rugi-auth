@@ -1,5 +1,5 @@
 import {Request, Response, NextFunction} from "express";
-import {createApp, deleteAppById, findAppById} from "../services/app.service";
+import {createApp, updateApp, deleteAppById, findAppById, getAppUsers} from "../services/app.service";
 import {prisma} from "../config/database";
 
 /**
@@ -83,6 +83,26 @@ export async function listAppsController(
     }
 }
 
+/**
+ * Update an app by ID
+ */
+export async function updateAppController(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const {appId} = req.params;
+        const updatedApp = await updateApp(appId, req.body);
+        res.json({
+            message: "Application updated successfully",
+            data: updatedApp,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export async function deleteAppController(req: Request, res: Response, next: NextFunction) {
     const {appId} = req.params;
     try {
@@ -102,7 +122,98 @@ export async function deleteAppController(req: Request, res: Response, next: Nex
 }
 
 /**
- * Create or assign a role for an app
+ * Get an app by ID
+ */
+export async function getAppController(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const {appId} = req.params;
+
+        const app = await findAppById(appId);
+
+        res.json({
+            id: app.id,
+            name: app.name,
+            client_id: app.clientId,
+            type: app.type,
+            redirect_uris: app.redirectUris,
+            created_at: app.createdAt,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
+ * Get all users of an app
+ */
+export async function getAppUsersController(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const {appId} = req.params;
+        const {page = 1, limit = 20} = req.query as {
+            page?: number;
+            limit?: number;
+        };
+
+        const result = await getAppUsers(appId, Number(page), Number(limit));
+
+        res.json(result);
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
+ * Get all roles for an app
+ */
+export async function getAppRolesController(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const {appId} = req.params;
+
+        // Verify app exists
+        const app = await findAppById(appId);
+
+        // Get all roles for this app
+        const roles = await prisma.role.findMany({
+            where: {appId},
+            include: {
+                userAppRoles: true,
+            },
+            orderBy: {name: 'asc'},
+        });
+
+        const rolesWithCounts = roles.map((role) => ({
+            id: role.id,
+            name: role.name,
+            userCount: role.userAppRoles.length,
+            createdAt: role.createdAt,
+        }));
+
+        res.json({
+            app: {
+                id: app.id,
+                name: app.name,
+            },
+            roles: rolesWithCounts,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
+ * Create a role for an app
  */
 export async function assignAppRoleController(
     req: Request,
@@ -116,15 +227,17 @@ export async function assignAppRoleController(
         // Verify app exists
         await findAppById(appId);
 
-        // Find or create role
+        // Find or create role for this app
         const {findOrCreateRole} = await import("../services/role.service");
-        const role = await findOrCreateRole(role_name);
+        const role = await findOrCreateRole(appId, role_name);
 
         res.json({
             message: "Role created/verified successfully",
             role: {
                 id: role.id,
                 name: role.name,
+                appId: role.appId,
+                createdAt: role.createdAt,
             },
         });
     } catch (error) {
