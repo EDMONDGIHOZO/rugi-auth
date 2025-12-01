@@ -2,10 +2,12 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import pinoHttp from 'pino-http';
+import swaggerUi from 'swagger-ui-express';
 import { logger } from './utils/logger';
 import { env } from './config/env';
 import routes from './routes';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
+import { swaggerDocument } from './config/swagger';
 
 const app = express();
 
@@ -46,6 +48,9 @@ app.use(
     },
   })
 );
+
+// Swagger UI - API documentation
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -1,11 +1,16 @@
-import { Router } from 'express';
+import {Router} from 'express';
 import {
-  createAppController,
-  assignAppRoleController,
+    createAppController,
+    assignAppRoleController,
+    listAppsController, deleteAppController,
 } from '../controllers/app.controller';
-import { validateBody, validateParams } from '../middleware/validation.middleware';
-import { appValidators, paramValidators } from '../utils/validators';
-import { authMiddleware } from '../middleware/auth.middleware';
+import {
+    validateBody,
+    validateParams,
+    validateQuery,
+} from '../middleware/validation.middleware';
+import {appValidators, paramValidators} from '../utils/validators';
+import {authMiddleware} from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -13,13 +18,20 @@ const router = Router();
 router.use(authMiddleware);
 
 /**
+ * GET /apps
+ * List applications with optional search and pagination
+ */
+router.get('/', validateQuery(appValidators.list), listAppsController);
+router.delete('/:appId', validateParams(paramValidators.appId), deleteAppController);
+
+/**
  * POST /apps
  * Register a new client application
  */
 router.post(
-  '/',
-  validateBody(appValidators.createApp),
-  createAppController
+    '/',
+    validateBody(appValidators.createApp),
+    createAppController
 );
 
 /**
@@ -27,10 +39,10 @@ router.post(
  * Create or assign a role for an app
  */
 router.post(
-  '/:appId/roles',
-  validateParams(paramValidators.appId),
-  validateBody(appValidators.assignRole),
-  assignAppRoleController
+    '/:appId/roles',
+    validateParams(paramValidators.appId),
+    validateBody(appValidators.assignRole),
+    assignAppRoleController
 );
 
 export default router;

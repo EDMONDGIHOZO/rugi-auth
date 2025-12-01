@@ -17,6 +17,14 @@ const envSchema = Joi.object({
   LOG_LEVEL: Joi.string()
     .valid('fatal', 'error', 'warn', 'info', 'debug', 'trace')
     .default('info'),
+  // Azure Communication Services Email
+  AZURE_COMMUNICATION_CONNECTION_STRING: Joi.string().optional(),
+  AZURE_COMMUNICATION_SENDER_EMAIL: Joi.string().email().optional(),
+  // Frontend URLs for email links
+  FRONTEND_URL: Joi.string().uri().default('http://localhost:3000'),
+  PASSWORD_RESET_TOKEN_EXPIRY: Joi.string().default('1h'),
+  OTP_EXPIRY: Joi.string().default('10m'),
+  OTP_LENGTH: Joi.number().integer().min(4).max(8).default(6),
 }).unknown();
 
 const { error, value } = envSchema.validate(process.env);
@@ -46,5 +54,17 @@ export const env = {
     maxRequests: value.RATE_LIMIT_MAX_REQUESTS,
   },
   logLevel: value.LOG_LEVEL,
+  email: {
+    azureConnectionString: value.AZURE_COMMUNICATION_CONNECTION_STRING,
+    senderEmail: value.AZURE_COMMUNICATION_SENDER_EMAIL,
+  },
+  frontendUrl: value.FRONTEND_URL,
+  passwordReset: {
+    tokenExpiry: value.PASSWORD_RESET_TOKEN_EXPIRY,
+  },
+  otp: {
+    expiry: value.OTP_EXPIRY,
+    length: value.OTP_LENGTH,
+  },
 } as const;
 

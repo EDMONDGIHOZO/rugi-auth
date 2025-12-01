@@ -4,6 +4,14 @@ import 'dotenv/config';
 import app from './app';
 import { env } from './config/env';
 import { logger } from './utils/logger';
+import { initializeEmailClient } from './services/email.service';
+
+// Initialize email service
+try {
+  initializeEmailClient();
+} catch (error) {
+  logger.warn({ error }, 'Email service initialization failed, continuing without email support');
+}
 
 const server = app.listen(env.port, () => {
   logger.info(

@@ -18,10 +18,12 @@ model User {
   mfaSecret       String?   @map("mfa_secret") @db.Text
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
 
-  userAppRoles   UserAppRole[]
-  refreshTokens  RefreshToken[]
-  authAudits     AuthAudit[]
-  assignedRoles  UserAppRole[] @relation("AssignedBy")
+  userAppRoles       UserAppRole[]
+  refreshTokens      RefreshToken[]
+  authAudits         AuthAudit[]
+  assignedRoles      UserAppRole[] @relation("AssignedBy")
+  passwordResetTokens PasswordResetToken[]
+  emailOTPs          EmailOTP[]
 
   @@map("users")
   @@index([email])
@@ -114,5 +116,43 @@ enum AuditAction {
   REVOKE
   ROLE_ASSIGN
   REGISTER
+  PASSWORD_RESET_REQUEST
+  PASSWORD_RESET_COMPLETE
+  OTP_REQUEST
+  OTP_LOGIN
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime @map("expires_at") @db.Timestamp(6)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([used])
+}
+
+model EmailOTP {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  code      String   @db.VarChar(6)
+  expiresAt DateTime @map("expires_at") @db.Timestamp(6)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_otps")
+  @@index([userId])
+  @@index([code])
+  @@index([expiresAt])
+  @@index([used])
 }
 

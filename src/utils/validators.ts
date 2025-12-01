@@ -29,6 +29,40 @@ export const authValidators = {
   revoke: Joi.object({
     refresh_token: Joi.string().required(),
   }),
+
+  requestPasswordReset: Joi.object({
+    email: Joi.string().email().required().max(255),
+  }),
+
+  resetPassword: Joi.object({
+    token: Joi.string().uuid().required(),
+    new_password: Joi.string().min(8).required().max(128),
+  }),
+
+  requestOTP: Joi.object({
+    email: Joi.string().email().required().max(255),
+    client_id: Joi.string().required(),
+    client_secret: Joi.string().when('$requireSecret', {
+      is: true,
+      then: Joi.required(),
+      otherwise: Joi.optional(),
+    }),
+  }),
+
+  verifyOTP: Joi.object({
+    email: Joi.string().email().required().max(255),
+    code: Joi.string()
+      .pattern(/^\d+$/)
+      .length(6)
+      .required(),
+    client_id: Joi.string().required(),
+    client_secret: Joi.string().when('$requireSecret', {
+      is: true,
+      then: Joi.required(),
+      otherwise: Joi.optional(),
+    }),
+    device_info: Joi.object().optional(),
+  }),
 };
 
 /**
@@ -44,6 +78,12 @@ export const appValidators = {
   assignRole: Joi.object({
     role_name: Joi.string().required().max(100),
   }),
+
+  list: Joi.object({
+    search: Joi.string().max(255).optional(),
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(20),
+  }),
 };
 
 /**
@@ -54,6 +94,23 @@ export const userValidators = {
     app_id: Joi.string().uuid().required(),
     role_name: Joi.string().required().max(100),
   }),
+
+  list: Joi.object({
+    search: Joi.string().max(255).optional(),
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(20),
+  }),
+};
+
+/**
+ * Validation schemas for role endpoints
+ */
+export const roleValidators = {
+  list: Joi.object({
+    search: Joi.string().max(255).optional(),
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(100),
+  }),
 };
 
 /**
@@ -63,7 +120,17 @@ export const auditValidators = {
   list: Joi.object({
     user_id: Joi.string().uuid().optional(),
     action: Joi.string()
-      .valid('LOGIN', 'REFRESH', 'REVOKE', 'ROLE_ASSIGN', 'REGISTER')
+      .valid(
+        'LOGIN',
+        'REFRESH',
+        'REVOKE',
+        'ROLE_ASSIGN',
+        'REGISTER',
+        'PASSWORD_RESET_REQUEST',
+        'PASSWORD_RESET_COMPLETE',
+        'OTP_REQUEST',
+        'OTP_LOGIN'
+      )
       .optional(),
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(20),

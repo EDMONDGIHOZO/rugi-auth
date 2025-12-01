@@ -1,10 +1,16 @@
 import { Router } from "express";
+import Joi from "joi";
 import {
   registerController,
   loginController,
   refreshController,
   revokeController,
   meController,
+  requestPasswordResetController,
+  resetPasswordController,
+  verifyResetTokenController,
+  requestOTPController,
+  verifyOTPController,
 } from "../controllers/auth.controller";
 import { validateBody } from "../middleware/validation.middleware";
 import { authValidators } from "../utils/validators";
@@ -59,7 +65,7 @@ router.post("/revoke", validateBody(authValidators.revoke), revokeController);
  * GET /.well-known/jwks.json
  * Public key endpoint in JWKS format
  */
-router.get("/.well-known/jwks.json", (req, res) => {
+router.get("/.well-known/jwks.json", (_req, res) => {
   try {
     const publicKey = getPublicKey();
 
@@ -89,5 +95,59 @@ router.get("/.well-known/jwks.json", (req, res) => {
  * Get current user information (requires authentication)
  */
 router.get("/me", authMiddleware, meController);
+
+/**
+ * POST /password-reset/request
+ * Request a password reset email
+ */
+router.post(
+  "/password-reset/request",
+  authRateLimiter,
+  validateBody(authValidators.requestPasswordReset),
+  requestPasswordResetController
+);
+
+/**
+ * POST /password-reset/verify
+ * Verify if a reset token is valid
+ */
+router.post(
+  "/password-reset/verify",
+  validateBody(Joi.object({ token: Joi.string().uuid().required() })),
+  verifyResetTokenController
+);
+
+/**
+ * POST /password-reset/reset
+ * Reset password using token
+ */
+router.post(
+  "/password-reset/reset",
+  authRateLimiter,
+  validateBody(authValidators.resetPassword),
+  resetPasswordController
+);
+
+/**
+ * POST /otp/request
+ * Request OTP for email login
+ */
+router.post(
+  "/otp/request",
+  authRateLimiter,
+  validateBody(authValidators.requestOTP),
+  requestOTPController
+);
+
+/**
+ * POST /otp/verify
+ * Verify OTP and login
+ */
+router.post(
+  "/otp/verify",
+  authRateLimiter,
+  validateBody(authValidators.verifyOTP),
+  verifyOTPController
+);
 
 export default router;

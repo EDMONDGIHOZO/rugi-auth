@@ -10,7 +10,7 @@ async function main() {
   // Create default roles
   console.log('Creating default roles...');
   const roles = ['user', 'admin', 'owner'];
-  
+
   for (const roleName of roles) {
     await prisma.role.upsert({
       where: { name: roleName },
@@ -20,11 +20,95 @@ async function main() {
     console.log(`✓ Role "${roleName}" created/verified`);
   }
 
+  // Create main frontend dashboard app
+  console.log('\nCreating main frontend dashboard app...');
+
+  const dashboardApp = await prisma.app.upsert({
+    where: { clientId: 'dashboard-app-id' },
+    update: {},
+    create: {
+      name: 'YebaLabs Dashboard',
+      clientId: 'dashboard-app-id',
+      clientSecretHash: null, // Frontend dashboard (public client, use PKCE)
+      type: 'PUBLIC',
+      // Adjust this redirect URI to match your frontend dashboard
+      redirectUris: ['http://localhost:5173/callback'],
+    },
+  });
+
+  console.log('✓ Dashboard app created');
+  console.log(`  Name: ${dashboardApp.name}`);
+  console.log(`  Client ID: ${dashboardApp.clientId}`);
+  console.log(`  Type: ${dashboardApp.type}`);
+
+  // Create initial superuser for dashboard
+  console.log('\nCreating initial superuser for dashboard...');
+  const superUserEmail = 'edtech250@hotmail.com';
+  const superUserPassword = 'password';
+  const superUserPasswordHash = await hashPassword(superUserPassword);
+
+  const superUser = await prisma.user.upsert({
+    where: { email: superUserEmail },
+    update: {},
+    create: {
+      email: superUserEmail,
+      passwordHash: superUserPasswordHash,
+      isEmailVerified: true,
+    },
+  });
+
+  console.log('✓ Superuser created/verified');
+  console.log(`  Email: ${superUser.email}`);
+  console.log(`  Password: ${superUserPassword}`);
+
+  // Assign owner/admin roles for dashboard app to superuser
+  const ownerRole = await prisma.role.findUnique({ where: { name: 'owner' } });
+  const adminRole = await prisma.role.findUnique({ where: { name: 'admin' } });
+
+  if (ownerRole) {
+    await prisma.userAppRole.upsert({
+      where: {
+        userId_appId_roleId: {
+          userId: superUser.id,
+          appId: dashboardApp.id,
+          roleId: ownerRole.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: superUser.id,
+        appId: dashboardApp.id,
+        roleId: ownerRole.id,
+      },
+    });
+    console.log('✓ Superuser assigned "owner" role in Dashboard app');
+  }
+
+  if (adminRole) {
+    await prisma.userAppRole.upsert({
+      where: {
+        userId_appId_roleId: {
+          userId: superUser.id,
+          appId: dashboardApp.id,
+          roleId: adminRole.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: superUser.id,
+        appId: dashboardApp.id,
+        roleId: adminRole.id,
+      },
+    });
+    console.log('✓ Superuser assigned "admin" role in Dashboard app');
+  }
+
   // Create example apps
   console.log('\nCreating example apps...');
 
   // E-commerce app (confidential)
   const ecommerceClientSecret = 'ecommerce-secret-' + Date.now();
+  console.log(`E-commerce client secret: ${ecommerceClientSecret}`);
   const ecommerceClientSecretHash = await hashPassword(ecommerceClientSecret);
 
   const ecommerceApp = await prisma.app.upsert({

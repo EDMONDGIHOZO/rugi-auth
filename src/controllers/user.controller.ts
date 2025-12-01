@@ -53,3 +53,57 @@ export async function assignUserRoleController(
   }
 }
 
+/**
+ * List users with optional search and pagination
+ */
+export async function listUsersController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { search, page = 1, limit = 20 } = req.query as {
+      search?: string;
+      page?: number;
+      limit?: number;
+    };
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const take = Number(limit);
+
+    const where: any = {};
+
+    if (search) {
+      where.email = { contains: search, mode: 'insensitive' };
+    }
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    res.json({
+      data: users.map((user) => ({
+        id: user.id,
+        email: user.email,
+        isEmailVerified: user.isEmailVerified,
+        mfaEnabled: user.mfaEnabled,
+        createdAt: user.createdAt,
+      })),
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages: Math.ceil(total / Number(limit)),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
