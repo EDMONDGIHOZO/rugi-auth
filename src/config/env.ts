@@ -11,7 +11,7 @@ const envSchema = Joi.object({
   JWT_REFRESH_TOKEN_EXPIRY: Joi.string().default("7d"),
   PRIVATE_KEY_PATH: Joi.string().default("./keys/private.pem"),
   PUBLIC_KEY_PATH: Joi.string().default("./keys/public.pem"),
-  CORS_ORIGIN: Joi.string().default("*"),
+  CORS_ORIGIN: Joi.string().required(),
   RATE_LIMIT_WINDOW_MS: Joi.number().positive().default(60000),
   RATE_LIMIT_MAX_REQUESTS: Joi.number().positive().default(100),
   LOG_LEVEL: Joi.string()

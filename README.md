@@ -73,6 +73,7 @@ POSTGRES_DB=yebalabs_auth
 # Application configuration
 JWT_ISSUER="yebalabs-auth"
 PORT=3000
+CORS_ORIGIN="http://localhost:3000,http://localhost:3001,https://yourdomain.com"
 ```
 
 **Note**: If using Docker Compose, you must set `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` in your `.env` file. The `DATABASE_URL` should match these values (or point to your own PostgreSQL instance).
@@ -438,7 +439,7 @@ npm run prisma:migrate -- --name migration_name
    PORT=3000
    DATABASE_URL="postgresql://user:password@host:5432/dbname?schema=public"
    JWT_ISSUER="yebalabs-auth"
-   CORS_ORIGIN="https://yourdomain.com"
+   CORS_ORIGIN="https://yourdomain.com,https://app.yourdomain.com"
    # ... other required variables
    ```
 
@@ -492,7 +493,7 @@ The `ecosystem.config.js` file is configured with:
 6. **Backups**: Set up automated database backups
 7. **Health Checks**: Monitor `/health` endpoint
 8. **Rate Limiting**: Adjust rate limits based on production traffic
-9. **CORS**: Configure allowed origins for your frontend domains
+9. **CORS**: Configure `CORS_ORIGIN` in `.env` as a comma-separated list of allowed origins (e.g., `"https://app1.com,https://app2.com"`). Wildcards are not supported for security.
 10. **HTTPS**: Always use HTTPS in production (configure at reverse proxy level)
 
 ### Example Nginx Configuration

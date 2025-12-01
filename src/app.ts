@@ -17,9 +17,9 @@ const app = express();
 // Security middleware
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration - only allow origins explicitly defined in .env
 const corsOptions = {
-  origin: env.cors.origin === "*" ? true : env.cors.origin.split(","),
+  origin: env.cors.origin.split(",").map((origin: string) => origin.trim()),
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
