@@ -59,13 +59,13 @@ Copy the example environment file:
 cp .env.example .env
 ```
 
-Edit `.env` and configure:
+Edit `.env` and configure (optional - defaults are provided):
 
 ```env
 # Database connection for the application
 DATABASE_URL="postgresql://rugi:rugi_password@localhost:5432/rugi_auth?schema=public"
 
-# PostgreSQL container configuration (required for docker-compose)
+# PostgreSQL container configuration (optional - docker-compose has defaults)
 POSTGRES_USER=rugi
 POSTGRES_PASSWORD=rugi_password
 POSTGRES_DB=rugi_auth
@@ -76,7 +76,12 @@ PORT=3000
 CORS_ORIGIN="http://localhost:3000,http://localhost:3001,https://yourdomain.com"
 ```
 
-**Note**: If using Docker Compose, you must set `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` in your `.env` file. The `DATABASE_URL` should match these values (or point to your own PostgreSQL instance).
+**Note**: The Docker Compose setup now includes default values for `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB`. If you don't provide a `.env` file, it will use these defaults:
+- `POSTGRES_USER=rugi`
+- `POSTGRES_PASSWORD=rugi_password`
+- `POSTGRES_DB=rugi_auth`
+
+The database and user will be **automatically created** on first startup. The `DATABASE_URL` should match these values (or point to your own PostgreSQL instance).
 
 ### 3. Start PostgreSQL
 
@@ -86,7 +91,11 @@ Using Docker Compose:
 docker-compose up -d postgres
 ```
 
-The Docker Compose file will read `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` from your `.env` file to configure the PostgreSQL container.
+The Docker Compose setup will:
+- Read environment variables from your `.env` file (if it exists)
+- Fall back to default values if variables are not set
+- Automatically create the database and user on first startup
+- Run the initialization script to ensure proper setup
 
 Or use your own PostgreSQL instance and update `DATABASE_URL` in `.env` accordingly.
 
@@ -437,7 +446,7 @@ npm run prisma:migrate -- --name migration_name
    ```env
    NODE_ENV=production
    PORT=3000
-   DATABASE_URL="postgresql://user:password@host:5432/dbname?schema=public"
+   DATABASE_URL="postgresql://user:password@host:55432/dbname?schema=public"
    JWT_ISSUER="rugi-auth"
    CORS_ORIGIN="https://yourdomain.com,https://app.yourdomain.com"
    # ... other required variables
