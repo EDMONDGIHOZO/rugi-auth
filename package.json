@@ -2,10 +2,15 @@
   "name": "rugi-auth",
   "version": "1.0.0",
   "description": "Centralized authentication service with multi-app role management",
-  "main": "dist/server.js",
+"main": "dist/index.js",
+"types": "dist/index.d.ts",
+"files": [
+    "dist",
+    "prisma"
+],
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "start:pm2": "pm2 start ecosystem.config.js",
     "stop:pm2": "pm2 stop rugi-auth",
@@ -23,7 +28,8 @@
     "dev:create-superadmin": "tsx scripts/create-superadmin.ts",
     "migrate:roles": "tsx scripts/migrate-roles-to-app-specific.ts",
     "lint": "eslint src --ext .ts",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "authentication",
@@ -31,7 +37,7 @@
     "oauth",
     "multi-tenant"
   ],
-  "author": "",
+"author": "edmondgi",
   "license": "MIT",
 "dependencies": {
     "@prisma/client": "5.7.1",
