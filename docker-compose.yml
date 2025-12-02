@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: yebalabs-auth-db
+    container_name: rugi-auth-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -15,7 +15,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U yebalabs"]
+      test: ["CMD-SHELL", "pg_isready -U rugi"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,10 +26,10 @@ services:
   #   build:
   #     context: .
   #     dockerfile: Dockerfile
-  #   container_name: yebalabs-auth-app
+  #   container_name: rugi-auth-app
   #   environment:
   #     NODE_ENV: development
-  #     DATABASE_URL: postgresql://yebalabs:yebalabs_password@postgres:5432/yebalabs_auth?schema=public
+  #     DATABASE_URL: postgresql://rugi:rugi_password@postgres:5432/rugi_auth?schema=public
   #     PORT: 3000
   #   ports:
   #     - "3000:3000"

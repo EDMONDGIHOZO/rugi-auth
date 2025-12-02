@@ -1,6 +1,6 @@
-# YebaLabs Authentication Service
+## Rugi Auth
 
-A production-grade, centralized authentication service that enables multiple applications to share a single user base while maintaining separate role-based access control per application.
+A production-grade, centralized authentication service (`rugi-auth`) that enables multiple applications to share a single user base while maintaining separate role-based access control per application.
 
 ## Features
 
@@ -47,7 +47,7 @@ A production-grade, centralized authentication service that enables multiple app
 
 ```bash
 git clone <repository-url>
-cd yebalabs-auth
+cd rugi-auth
 npm install
 ```
 
@@ -63,15 +63,15 @@ Edit `.env` and configure:
 
 ```env
 # Database connection for the application
-DATABASE_URL="postgresql://user:password@localhost:5432/yebalabs_auth?schema=public"
+DATABASE_URL="postgresql://rugi:rugi_password@localhost:5432/rugi_auth?schema=public"
 
 # PostgreSQL container configuration (required for docker-compose)
-POSTGRES_USER=yebalabs
-POSTGRES_PASSWORD=yebalabs_password
-POSTGRES_DB=yebalabs_auth
+POSTGRES_USER=rugi
+POSTGRES_PASSWORD=rugi_password
+POSTGRES_DB=rugi_auth
 
 # Application configuration
-JWT_ISSUER="yebalabs-auth"
+JWT_ISSUER="rugi-auth"
 PORT=3000
 CORS_ORIGIN="http://localhost:3000,http://localhost:3001,https://yourdomain.com"
 ```
@@ -321,7 +321,7 @@ Access tokens contain the following claims:
   "aud": "ecommerce-app-id",
   "tid": "app-uuid",
   "roles": ["owner", "admin"],
-  "iss": "yebalabs-auth",
+  "iss": "rugi-auth",
   "iat": 1704067200,
   "exp": 1704070800
 }
@@ -353,7 +353,7 @@ function getKey(header, callback) {
 
 jwt.verify(token, getKey, {
   audience: 'your-client-id',
-  issuer: 'yebalabs-auth',
+  issuer: 'rugi-auth',
   algorithms: ['RS256']
 }, (err, decoded) => {
   if (err) {
@@ -438,7 +438,7 @@ npm run prisma:migrate -- --name migration_name
    NODE_ENV=production
    PORT=3000
    DATABASE_URL="postgresql://user:password@host:5432/dbname?schema=public"
-   JWT_ISSUER="yebalabs-auth"
+   JWT_ISSUER="rugi-auth"
    CORS_ORIGIN="https://yourdomain.com,https://app.yourdomain.com"
    # ... other required variables
    ```
@@ -467,12 +467,12 @@ npm run prisma:migrate -- --name migration_name
 ### PM2 Management Commands
 
 - **Start:** `npm run start:pm2` or `pm2 start ecosystem.config.js`
-- **Stop:** `npm run stop:pm2` or `pm2 stop yebalabs-auth`
-- **Restart:** `npm run restart:pm2` or `pm2 restart yebalabs-auth`
-- **Reload (zero-downtime):** `npm run reload:pm2` or `pm2 reload yebalabs-auth`
-- **View logs:** `npm run logs:pm2` or `pm2 logs yebalabs-auth`
+- **Stop:** `npm run stop:pm2` or `pm2 stop rugi-auth`
+- **Restart:** `npm run restart:pm2` or `pm2 restart rugi-auth`
+- **Reload (zero-downtime):** `npm run reload:pm2` or `pm2 reload rugi-auth`
+- **View logs:** `npm run logs:pm2` or `pm2 logs rugi-auth`
 - **Monitor:** `npm run monitor:pm2` or `pm2 monit`
-- **Delete:** `npm run delete:pm2` or `pm2 delete yebalabs-auth`
+- **Delete:** `npm run delete:pm2` or `pm2 delete rugi-auth`
 
 ### PM2 Configuration
 

@@ -6,7 +6,7 @@ const envSchema = Joi.object({
     .default("development"),
   PORT: Joi.number().port().default(3000),
   DATABASE_URL: Joi.string().required(),
-  JWT_ISSUER: Joi.string().default("yebalabs-auth"),
+  JWT_ISSUER: Joi.string().default("rugi-auth"),
   JWT_ACCESS_TOKEN_EXPIRY: Joi.string().default("10m"),
   JWT_REFRESH_TOKEN_EXPIRY: Joi.string().default("7d"),
   PRIVATE_KEY_PATH: Joi.string().default("./keys/private.pem"),
@@ -24,7 +24,7 @@ const envSchema = Joi.object({
   SMTP_USER: Joi.string().optional(),
   SMTP_PASSWORD: Joi.string().optional(),
   SMTP_FROM_EMAIL: Joi.string().email().optional(),
-  SMTP_FROM_NAME: Joi.string().optional().default("YebaLabs Auth"),
+  SMTP_FROM_NAME: Joi.string().optional().default("Ruigi Auth"),
   // Frontend URLs for email links
   FRONTEND_URL: Joi.string().uri().default("http://localhost:3000"),
   PASSWORD_RESET_TOKEN_EXPIRY: Joi.string().default("1h"),

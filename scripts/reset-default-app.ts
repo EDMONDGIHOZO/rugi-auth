@@ -1,7 +1,7 @@
 /**
  * Dev Script: Reset Default App Credentials
  *
- * Resets the client_id and client_secret for the default "YebaLabs Dashboard" app.
+ * Resets the client_id and client_secret for the default "Ruigi Dashboard" app.
  * Useful for development when you need consistent, known credentials.
  *
  * Usage:
@@ -14,8 +14,8 @@ import { hashPassword } from "../src/services/password.service";
 
 const prisma = new PrismaClient();
 
-const DEFAULT_APP_NAME = "YebaLabs Dashboard";
-const DEFAULT_CLIENT_ID = "yebalabs-dashboard-dev";
+const DEFAULT_APP_NAME = "Rugi Dashboard";
+const DEFAULT_CLIENT_ID = "rugi-dashboard-dev";
 
 async function main() {
   console.log("🔄 Resetting default app credentials...\n");

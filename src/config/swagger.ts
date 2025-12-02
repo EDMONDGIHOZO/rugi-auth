@@ -1,12 +1,12 @@
 export const swaggerDocument = {
   openapi: '3.0.0',
   info: {
-    title: 'YebaLabs Auth API',
+    title: 'Ruigi Auth API',
     version: '1.0.0',
     description:
       'Centralized authentication service with multi-app role management, OAuth, password reset, and email OTP login.',
     contact: {
-      name: 'YebaLabs',
+      name: 'Ruigi Auth',
     },
   },
   servers: [

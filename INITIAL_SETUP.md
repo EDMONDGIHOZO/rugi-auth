@@ -6,7 +6,7 @@ Quick guide to set up your authentication system for the first time.
 
 ### Step 1: Reset Default App
 
-Creates or resets the default "YebaLabs Dashboard" app with consistent credentials.
+Creates or resets the default "Rugi Dashboard" app with consistent credentials.
 
 ```bash
 npm run dev:reset-app
@@ -16,8 +16,8 @@ npm run dev:reset-app
 ```
 ✅ Credentials reset successfully!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📱 App Name:      YebaLabs Dashboard
-🆔 Client ID:     yebalabs-dashboard-dev
+📱 App Name:      Rugi Dashboard
+🆔 Client ID:     rugi-dashboard-dev
 🔑 Client Secret: [64-character secret]
 📋 Type:          CONFIDENTIAL
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -56,7 +56,7 @@ npm run dev:create-superadmin
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📧 Email:    admin@example.com
 🆔 User ID:  [user-uuid]
-📱 App:      YebaLabs Dashboard
+📱 App:      Rugi Dashboard
 👑 Roles:    superadmin, owner
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
@@ -67,8 +67,8 @@ npm run dev:create-superadmin
 
 ### Default App Creation
 
-- **App Name:** `YebaLabs Dashboard`
-- **Client ID:** `yebalabs-dashboard-dev` (consistent)
+- **App Name:** `Rugi Dashboard`
+- **Client ID:** `rugi-dashboard-dev` (consistent)
 - **Type:** `CONFIDENTIAL`
 - **Redirect URIs:**
   - `http://localhost:3000/callback`
@@ -101,7 +101,7 @@ curl -X POST http://localhost:3000/login \
   -d '{
     "email": "admin@example.com",
     "password": "your-password",
-    "client_id": "yebalabs-dashboard-dev",
+    "client_id": "rugi-dashboard-dev",
     "client_secret": "your-64-char-secret"
   }'
 ```
@@ -146,7 +146,7 @@ Create a setup script for your team:
 #!/bin/bash
 # setup.sh
 
-echo "🚀 Setting up YebaLabs Auth..."
+echo "🚀 Setting up Rugi Auth..."
 
 # Step 1: Reset app
 echo "Step 1: Creating default app..."
@@ -154,7 +154,7 @@ npm run dev:reset-app
 
 # Step 2: Create superadmin
 echo "Step 2: Creating superadmin..."
-SUPERADMIN_EMAIL=${ADMIN_EMAIL:-admin@yebalabs.com} \
+SUPERADMIN_EMAIL=${ADMIN_EMAIL:-admin@rugi.app} \
 SUPERADMIN_PASSWORD=${ADMIN_PASSWORD:-Admin123!} \
 npm run dev:create-superadmin
 
@@ -181,9 +181,9 @@ ADMIN_EMAIL=me@example.com ADMIN_PASSWORD=MyPassword! ./setup.sh
 curl -X POST http://localhost:3000/login \
   -H 'Content-Type: application/json' \
   -d '{
-    "email": "admin@yebalabs.com",
+    "email": "admin@rugi.app",
     "password": "Admin123!",
-    "client_id": "yebalabs-dashboard-dev",
+    "client_id": "rugi-dashboard-dev",
     "client_secret": "your-secret"
   }'
 ```

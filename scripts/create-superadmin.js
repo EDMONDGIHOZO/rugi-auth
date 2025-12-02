@@ -50,7 +50,7 @@ const client_1 = require("@prisma/client");
 const readline = __importStar(require("readline"));
 const password_service_1 = require("../src/services/password.service");
 const prisma = new client_1.PrismaClient();
-const DEFAULT_APP_NAME = 'YebaLabs Dashboard';
+const DEFAULT_APP_NAME = 'Rugi Dashboard';
 // Check if running in interactive mode
 const isInteractive = process.stdin.isTTY && process.stdout.isTTY;
 // Create readline interface for prompting (only in interactive mode)

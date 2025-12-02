@@ -17,7 +17,7 @@ import * as readline from 'readline';
 import { hashPassword } from '../src/services/password.service';
 
 const prisma = new PrismaClient();
-const DEFAULT_APP_NAME = 'YebaLabs Dashboard';
+const DEFAULT_APP_NAME = 'Rugi Dashboard';
 
 // Check if running in interactive mode
 const isInteractive = process.stdin.isTTY && process.stdout.isTTY;

@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'yebalabs-auth',
+      name: 'rugi-auth',
       script: './dist/server.js',
       instances: 'max', // Use all available CPU cores
       exec_mode: 'cluster', // Cluster mode for load balancing

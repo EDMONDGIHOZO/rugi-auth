@@ -6,12 +6,12 @@ let emailTransporter: Transporter | null = null;
 
 /**
  * Common footer appended to all transactional emails
- * Helps recipients verify the email really comes from YebaLabs.
+ * Helps recipients verify the email really comes from Ruigi Auth.
  */
 function generateGlobalEmailFooter(): string {
-  const companyEmail = env.email.from.email || "support@yebalabs.com";
+  const companyEmail = env.email.from.email || "support@rugi.app";
   const companyAddress = "KK 771 St";
-  const appNames = ["YebaLabs Auth", "YebaLabs Studio", "YebaLabs Console"];
+  const appNames = ["Ruigi Auth"];
 
   const appsRow = appNames
     .map(
@@ -23,15 +23,15 @@ function generateGlobalEmailFooter(): string {
   return `
   <hr style="border: none; border-top: 1px solid #ddd; margin: 24px 0;">
   <div style="font-size: 12px; color: #002455;">
-    <p style="margin: 4px 0; color: #050E3C;"><strong>YebaLabs</strong></p>
+    <p style="margin: 4px 0; color: #050E3C;"><strong>Ruigi Auth</strong></p>
     <p style="margin: 4px 0;">${companyAddress}</p>
     <p style="margin: 4px 0;">Contact: <a href="mailto:${companyEmail}" style="color: #FF3838;">${companyEmail}</a></p>
-    <p style="margin: 12px 0 4px 0;">Official YebaLabs applications:</p>
+    <p style="margin: 12px 0 4px 0;">Official Ruigi Auth applications:</p>
     <div style="margin-top: 4px;">
       ${appsRow}
     </div>
     <p style="margin-top: 12px;">
-      If an email claiming to be from YebaLabs does not contain this section, please treat it with caution.
+      If an email claiming to be from Ruigi Auth does not contain this section, please treat it with caution.
     </p>
   </div>
   `.trim();
@@ -245,11 +245,11 @@ export function generateUserInviteEmail(params: {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to YebaLabs</title>
+  <title>Welcome to Ruigi Auth</title>
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #002455; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background-color: #f4f4f4; padding: 20px; border-radius: 8px;">
-    <h1 style="color: #050E3C; margin-top: 0;">Welcome to YebaLabs Auth</h1>
+    <h1 style="color: #050E3C; margin-top: 0;">Welcome to Ruigi Auth</h1>
     <p>${introText}</p>
 
     <h2 style="color: #050E3C;">Your Applications</h2>
@@ -391,7 +391,7 @@ export async function sendUserInviteEmail(params: {
   isNewUser: boolean;
 }): Promise<void> {
   const subject = params.isNewUser
-    ? "Welcome to YebaLabs - Your Account Details"
+    ? "Welcome to Ruigi Auth - Your Account Details"
     : "You have been granted access to new applications";
   const htmlContent = generateUserInviteEmail(params);
 
