@@ -11,7 +11,7 @@ export const swaggerDocument = {
   },
   servers: [
     {
-      url: "http://localhost:3000",
+      url: "http://localhost:7100",
       description: "Local development server",
     },
   ],

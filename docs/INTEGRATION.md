@@ -44,14 +44,14 @@ npm run prisma:migrate
 npm run start
 ```
 
-Your auth service is now running at `http://localhost:3000` (or your configured port).
+Your auth service is now running at `http://localhost:7100` (or your configured port).
 
 ### Step 2: Register Your Application
 
 Create a client application in `rugi-auth`:
 
 ```bash
-curl -X POST http://localhost:3000/apps \
+curl -X POST http://localhost:7100/apps \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <admin_token>" \
   -d '{
@@ -647,7 +647,7 @@ app.listen(4000);
 
 | Variable           | Description                      | Default                 |
 | ------------------ | -------------------------------- | ----------------------- |
-| `AUTH_SERVICE_URL` | URL of rugi-auth service         | `http://localhost:3000` |
+| `AUTH_SERVICE_URL` | URL of rugi-auth service         | `http://localhost:7100` |
 | `CLIENT_ID`        | Your application's client ID     | -                       |
 | `CLIENT_SECRET`    | Your application's client secret | -                       |
 

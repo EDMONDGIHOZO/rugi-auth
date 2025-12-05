@@ -16,7 +16,7 @@ import jwksClient from "jwks-rsa";
 // ============================================================================
 
 const config = {
-  authServiceUrl: process.env.AUTH_SERVICE_URL || "http://localhost:3000",
+  authServiceUrl: process.env.AUTH_SERVICE_URL || "http://localhost:7100",
   clientId: process.env.CLIENT_ID || "your-client-id",
   port: process.env.PORT || 4000,
 };

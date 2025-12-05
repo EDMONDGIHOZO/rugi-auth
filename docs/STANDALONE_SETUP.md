@@ -1,6 +1,9 @@
-# Initial Setup Guide
+# Standalone Server Setup Guide
 
-Quick guide to set up your authentication system for the first time.
+Quick guide to set up the Rugi Auth server for the first time.
+
+> This guide is for deploying rugi-auth as a **standalone authentication service**.
+> If you just want to use rugi-auth in your Express app, see [INTEGRATION.md](./INTEGRATION.md).
 
 ## 🚀 First Time Setup
 
@@ -13,6 +16,7 @@ npm run dev:reset-app
 ```
 
 **Output:**
+
 ```
 ✅ Credentials reset successfully!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -38,6 +42,7 @@ npm run dev:create-superadmin
 ```
 
 **You'll be prompted for:**
+
 - Email address
 - Password (min 8 characters)
 - Password confirmation
@@ -51,6 +56,7 @@ npm run dev:create-superadmin
 ```
 
 **Output:**
+
 ```
 🎉 Superadmin created successfully!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -71,7 +77,7 @@ npm run dev:create-superadmin
 - **Client ID:** `rugi-dashboard-dev` (consistent)
 - **Type:** `CONFIDENTIAL`
 - **Redirect URIs:**
-  - `http://localhost:3000/callback`
+  - `http://localhost:7100/callback`
   - `http://localhost:3001/callback`
   - `http://localhost:5173/callback`
 
@@ -86,6 +92,7 @@ The first superadmin user gets:
    - `owner` - For app ownership
 
 **Roles created if not exist:**
+
 - `superadmin` role for the default app
 - `owner` role for the default app
 
@@ -96,7 +103,7 @@ The first superadmin user gets:
 After setup, test your login:
 
 ```bash
-curl -X POST http://localhost:3000/login \
+curl -X POST http://localhost:7100/login \
   -H 'Content-Type: application/json' \
   -d '{
     "email": "admin@example.com",
@@ -107,6 +114,7 @@ curl -X POST http://localhost:3000/login \
 ```
 
 **Response:**
+
 ```json
 {
   "access_token": "jwt-token...",
@@ -123,12 +131,14 @@ curl -X POST http://localhost:3000/login \
 If you already have a superadmin and want to create another:
 
 ### Interactive Mode:
+
 ```bash
 npm run dev:create-superadmin
 # Will prompt: "Do you want to create another superadmin? (yes/no)"
 ```
 
 ### Non-Interactive Mode:
+
 ```bash
 FORCE_CREATE=true \
 SUPERADMIN_EMAIL=admin2@example.com \
@@ -162,12 +172,14 @@ echo "✅ Setup complete!"
 ```
 
 **Usage:**
+
 ```bash
 chmod +x setup.sh
 ./setup.sh
 ```
 
 Or with custom credentials:
+
 ```bash
 ADMIN_EMAIL=me@example.com ADMIN_PASSWORD=MyPassword! ./setup.sh
 ```
@@ -177,8 +189,9 @@ ADMIN_EMAIL=me@example.com ADMIN_PASSWORD=MyPassword! ./setup.sh
 ## 🧪 Testing Superadmin Access
 
 ### 1. Login
+
 ```bash
-curl -X POST http://localhost:3000/login \
+curl -X POST http://localhost:7100/login \
   -H 'Content-Type: application/json' \
   -d '{
     "email": "admin@rugi.app",
@@ -192,15 +205,15 @@ curl -X POST http://localhost:3000/login \
 
 ```bash
 # List all users
-curl http://localhost:3000/users \
+curl http://localhost:7100/users \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 
 # List all apps
-curl http://localhost:3000/apps \
+curl http://localhost:7100/apps \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 
 # Manage auth settings (superadmin only)
-curl http://localhost:3000/auth-settings \
+curl http://localhost:7100/auth-settings \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
@@ -219,17 +232,20 @@ curl http://localhost:3000/auth-settings \
 ## ⚠️ Important Notes
 
 ### Security
+
 - **Superadmin** has full system access - protect these credentials!
 - Change default passwords in production
 - Use strong passwords (min 8 chars, mix of upper/lower/numbers/symbols)
 
 ### Roles Created
+
 - `superadmin` - System-wide management
 - `owner` - App ownership and management
 
 Both roles grant access to superadmin-only endpoints.
 
 ### Environment
+
 - These commands are for **development** only
 - In production, create superadmins through a secure process
 - Never commit credentials to git
@@ -239,21 +255,25 @@ Both roles grant access to superadmin-only endpoints.
 ## 🆘 Troubleshooting
 
 ### "Default app not found"
+
 ```bash
 # Run this first:
 npm run dev:reset-app
 ```
 
 ### "User with this email already exists"
+
 ```bash
 # Use a different email or delete the existing user
 ```
 
 ### "Superadmin already exists"
+
 **Interactive:** Answer "yes" to create another
 **Non-interactive:** Add `FORCE_CREATE=true`
 
 ### Want to start fresh?
+
 ```bash
 # Reset everything (WARNING: deletes all data)
 npx prisma migrate reset
@@ -266,10 +286,10 @@ npm run dev:create-superadmin
 ## 🎉 You're Ready!
 
 Your system now has:
+
 - ✅ Default app with known credentials
 - ✅ Superadmin user with full access
 - ✅ Superadmin and owner roles
 - ✅ Ready for dashboard development
 
 Start building! 🚀
-

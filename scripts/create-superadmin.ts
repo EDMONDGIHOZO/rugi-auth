@@ -314,7 +314,7 @@ async function main() {
 
   console.log('💡 You can now login with these credentials:');
   console.log('');
-  console.log('   POST http://localhost:3000/login');
+  console.log("   POST http://localhost:7100/login");
   console.log('   {');
   console.log(`     "email": "${user.email}",`);
   console.log('     "password": "your-password",');

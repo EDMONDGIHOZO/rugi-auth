@@ -79,7 +79,7 @@ cp .env.example .env
 ```env
 DATABASE_URL="postgresql://rugi:rugi_password@localhost:5432/rugi_auth"
 JWT_ISSUER="rugi-auth"
-PORT=3000
+PORT=7100
 ```
 
 ### 2. Start Database
@@ -104,7 +104,7 @@ npm run dev                # Development
 npm run start              # Production
 ```
 
-🚀 Server running at `http://localhost:3000`
+🚀 Server running at `http://localhost:7100`
 
 ---
 
