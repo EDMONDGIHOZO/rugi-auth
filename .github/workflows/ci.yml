@@ -42,3 +42,6 @@ jobs:
         run: |
           node -e "require('./dist/index.js')"
           echo "✅ Main export works"
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+          CORS_ORIGIN: "http://localhost:3000"
