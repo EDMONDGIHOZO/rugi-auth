@@ -29,13 +29,13 @@ This guide explains how to use `rugi-auth` for authentication in your Express ap
 
 ## Option 1: Standalone Auth Service (Recommended for Microservices)
 
-Deploy `rugi-auth` as a centralized authentication service, and verify tokens in your app using the public JWKS endpoint.
+Deploy `rugi-auth` as a centralized authentication service, and verify tokens in your app using the lightweight client.
 
 ### Step 1: Deploy the Auth Service
 
 ```bash
 # Clone and set up rugi-auth
-git clone <repo-url> rugi-auth
+git clone https://github.com/EDMONDGIHOZO/rugi-auth.git
 cd rugi-auth
 npm install
 npm run generate:keys
@@ -63,13 +63,82 @@ curl -X POST http://localhost:3000/apps \
 
 Save the returned `client_id` and `client_secret`.
 
-### Step 3: Install Dependencies in Your App
+### Step 3: Install the Package
 
 ```bash
-npm install jsonwebtoken jwks-rsa
+npm install rugi-auth
 ```
 
-### Step 4: Create Auth Middleware
+### Step 4: Use the Lightweight Client (Recommended)
+
+The `rugi-auth/client` import has only **2 dependencies** and is perfect for consumer apps:
+
+```typescript
+// app.ts
+import express from "express";
+import {
+  createAuthMiddleware,
+  createOptionalAuthMiddleware,
+  requireRole,
+  requireAnyRole,
+  authErrorMiddleware,
+} from "rugi-auth/client";
+
+const app = express();
+
+// Create auth middleware
+const auth = createAuthMiddleware({
+  jwksUri: process.env.AUTH_SERVICE_URL + "/.well-known/jwks.json",
+  issuer: "rugi-auth",
+  audience: process.env.CLIENT_ID, // optional
+});
+
+const optionalAuth = createOptionalAuthMiddleware({
+  jwksUri: process.env.AUTH_SERVICE_URL + "/.well-known/jwks.json",
+  issuer: "rugi-auth",
+});
+
+// Public route
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+// Protected route
+app.get("/profile", auth, (req, res) => {
+  res.json({
+    userId: req.user!.userId,
+    roles: req.user!.roles,
+  });
+});
+
+// Optional auth - user available if logged in
+app.get("/products", optionalAuth, (req, res) => {
+  res.json({
+    products: [...],
+    personalized: !!req.user,
+  });
+});
+
+// Role-protected routes
+app.get("/admin", auth, requireRole("admin"), (req, res) => {
+  res.json({ message: "Welcome, admin!" });
+});
+
+app.get("/dashboard", auth, requireAnyRole("admin", "manager"), (req, res) => {
+  res.json({ data: "..." });
+});
+
+// Error handler
+app.use(authErrorMiddleware);
+
+app.listen(4000);
+```
+
+### Alternative: Manual JWT Verification
+
+If you prefer not to use the package, you can verify tokens manually:
+
+### Step 4 (Alternative): Create Auth Middleware
 
 ```typescript
 // middleware/auth.ts

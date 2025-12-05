@@ -40,18 +40,30 @@ A production-ready, centralized authentication service that enables multiple app
 
 ## Installation
 
-### As a Standalone Service
-
-```bash
-git clone https://github.com/your-org/rugi-auth.git
-cd rugi-auth
-npm install
-```
-
 ### As an npm Package
 
 ```bash
 npm install rugi-auth
+```
+
+**Lightweight client** (only 2 dependencies):
+
+```javascript
+import { createAuthMiddleware } from "rugi-auth/client";
+```
+
+**Full package** (includes all services):
+
+```javascript
+import { authMiddleware } from "rugi-auth";
+```
+
+### As a Standalone Service
+
+```bash
+git clone https://github.com/EDMONDGIHOZO/rugi-auth.git
+cd rugi-auth
+npm install
 ```
 
 ---
@@ -98,78 +110,71 @@ npm run start              # Production
 
 ## Usage in Your App
 
-### Option 1: Verify Tokens via JWKS (Recommended)
+### Lightweight Client (Recommended)
 
-Install dependencies in your Express app:
+Import the lightweight client - only **2 dependencies** (`jsonwebtoken`, `jwks-rsa`):
 
 ```bash
-npm install jsonwebtoken jwks-rsa
+npm install rugi-auth
 ```
-
-Create auth middleware:
 
 ```javascript
-const jwt = require("jsonwebtoken");
-const jwksClient = require("jwks-rsa");
+import {
+  createAuthMiddleware,
+  requireRole,
+  requireAnyRole,
+} from "rugi-auth/client";
 
-const client = jwksClient({
-  jwksUri: "https://your-auth-server.com/.well-known/jwks.json",
-  cache: true,
+// Create auth middleware pointing to your auth server
+const auth = createAuthMiddleware({
+  jwksUri: "https://auth.example.com/.well-known/jwks.json",
+  issuer: "rugi-auth",
+  audience: "your-client-id", // optional
 });
 
-function authMiddleware(req, res, next) {
-  const token = req.headers.authorization?.substring(7);
-  if (!token) return res.status(401).json({ error: "No token" });
-
-  jwt.verify(
-    token,
-    (header, cb) => {
-      client.getSigningKey(header.kid, (err, key) => {
-        cb(err, key?.getPublicKey());
-      });
-    },
-    { algorithms: ["RS256"], issuer: "rugi-auth" },
-    (err, decoded) => {
-      if (err) return res.status(401).json({ error: "Invalid token" });
-      req.user = { userId: decoded.sub, roles: decoded.roles };
-      next();
-    }
-  );
-}
-
-// Protect your routes
-app.get("/profile", authMiddleware, (req, res) => {
+// Protect routes
+app.get("/profile", auth, (req, res) => {
   res.json({ userId: req.user.userId, roles: req.user.roles });
+});
+
+// Require specific role
+app.get("/admin", auth, requireRole("admin"), (req, res) => {
+  res.json({ message: "Welcome, admin!" });
+});
+
+// Require any of multiple roles
+app.get("/dashboard", auth, requireAnyRole("admin", "manager"), (req, res) => {
+  res.json({ data: "..." });
 });
 ```
 
-### Option 2: Import Package Directly
+### Full Package Import
+
+Import everything (includes all services for standalone deployment):
 
 ```javascript
 import { authMiddleware, roleMiddleware, errorMiddleware } from "rugi-auth";
 
-// Require authentication
-app.get("/profile", authMiddleware, (req, res) => {
-  res.json({ userId: req.user.userId });
-});
-
-// Require specific role
 app.get("/admin", authMiddleware, roleMiddleware("admin"), (req, res) => {
   res.json({ message: "Welcome, admin!" });
 });
 
-// Error handler (add last)
 app.use(errorMiddleware);
 ```
 
+> ⚠️ Full import includes optional dependencies for database, email, OAuth, etc.
+
 ### Available Middleware
 
-| Middleware | Description |
-|------------|-------------|
-| `authMiddleware` | Requires valid JWT, attaches `req.user` |
-| `optionalAuthMiddleware` | Attaches user if token present, continues if not |
-| `roleMiddleware(role)` | Requires user to have specific role |
-| `anyRoleMiddleware(...roles)` | Requires any of the specified roles |
+| Import | Function | Description |
+|--------|----------|-------------|
+| `rugi-auth/client` | `createAuthMiddleware(opts)` | Creates JWT verification middleware |
+| `rugi-auth/client` | `createOptionalAuthMiddleware(opts)` | Optional auth (doesn't fail) |
+| `rugi-auth/client` | `requireRole(role)` | Requires specific role |
+| `rugi-auth/client` | `requireAnyRole(...roles)` | Requires any of the roles |
+| `rugi-auth/client` | `requireAllRoles(...roles)` | Requires all roles |
+| `rugi-auth` | `authMiddleware` | Built-in auth (uses local keys) |
+| `rugi-auth` | `roleMiddleware(role)` | Role check middleware |
 
 📖 **[Full Integration Guide →](docs/INTEGRATION.md)**
 
