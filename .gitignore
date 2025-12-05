@@ -43,3 +43,9 @@ coverage/
 # Prisma
 prisma/migrations/
 
+# Scripts compiled output (run with tsx, not compiled)
+scripts/*.js
+scripts/*.d.ts
+scripts/*.js.map
+scripts/*.d.ts.map
+

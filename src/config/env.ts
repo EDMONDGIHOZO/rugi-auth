@@ -24,7 +24,7 @@ const envSchema = Joi.object({
   SMTP_USER: Joi.string().optional(),
   SMTP_PASSWORD: Joi.string().optional(),
   SMTP_FROM_EMAIL: Joi.string().email().optional(),
-  SMTP_FROM_NAME: Joi.string().optional().default("Ruigi Auth"),
+  SMTP_FROM_NAME: Joi.string().optional().default("Rugi Auth"),
   // Frontend URLs for email links
   FRONTEND_URL: Joi.string().uri().default("http://localhost:3000"),
   PASSWORD_RESET_TOKEN_EXPIRY: Joi.string().default("1h"),

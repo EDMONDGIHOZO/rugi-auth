@@ -6,12 +6,12 @@ let emailTransporter: Transporter | null = null;
 
 /**
  * Common footer appended to all transactional emails
- * Helps recipients verify the email really comes from Ruigi Auth.
+ * Helps recipients verify the email really comes from Rugi Auth.
  */
 function generateGlobalEmailFooter(): string {
   const companyEmail = env.email.from.email || "support@rugi.app";
   const companyAddress = "KK 771 St";
-  const appNames = ["Ruigi Auth"];
+  const appNames = ["Rugi Auth"];
 
   const appsRow = appNames
     .map(
@@ -23,15 +23,15 @@ function generateGlobalEmailFooter(): string {
   return `
   <hr style="border: none; border-top: 1px solid #ddd; margin: 24px 0;">
   <div style="font-size: 12px; color: #002455;">
-    <p style="margin: 4px 0; color: #050E3C;"><strong>Ruigi Auth</strong></p>
+    <p style="margin: 4px 0; color: #050E3C;"><strong>Rugi Auth</strong></p>
     <p style="margin: 4px 0;">${companyAddress}</p>
     <p style="margin: 4px 0;">Contact: <a href="mailto:${companyEmail}" style="color: #FF3838;">${companyEmail}</a></p>
-    <p style="margin: 12px 0 4px 0;">Official Ruigi Auth applications:</p>
+    <p style="margin: 12px 0 4px 0;">Official Rugi Auth applications:</p>
     <div style="margin-top: 4px;">
       ${appsRow}
     </div>
     <p style="margin-top: 12px;">
-      If an email claiming to be from Ruigi Auth does not contain this section, please treat it with caution.
+      If an email claiming to be from Rugi Auth does not contain this section, please treat it with caution.
     </p>
   </div>
   `.trim();
@@ -42,7 +42,9 @@ function generateGlobalEmailFooter(): string {
  */
 export function initializeEmailClient(): void {
   if (!env.email.smtp.host || !env.email.from.email) {
-    logger.warn('SMTP configuration not provided. Email service will be disabled.');
+    logger.warn(
+      "SMTP configuration not provided. Email service will be disabled."
+    );
     return;
   }
 
@@ -51,15 +53,18 @@ export function initializeEmailClient(): void {
       host: env.email.smtp.host,
       port: env.email.smtp.port,
       secure: env.email.smtp.secure, // true for 465, false for other ports
-      auth: env.email.smtp.user && env.email.smtp.password ? {
-        user: env.email.smtp.user,
-        pass: env.email.smtp.password,
-      } : undefined,
+      auth:
+        env.email.smtp.user && env.email.smtp.password
+          ? {
+              user: env.email.smtp.user,
+              pass: env.email.smtp.password,
+            }
+          : undefined,
     });
 
-    logger.info('Nodemailer SMTP transporter initialized');
+    logger.info("Nodemailer SMTP transporter initialized");
   } catch (error) {
-    logger.error({ error }, 'Failed to initialize email transporter');
+    logger.error({ error }, "Failed to initialize email transporter");
     throw error;
   }
 }
@@ -81,11 +86,11 @@ export async function sendEmail(
   textContent?: string
 ): Promise<void> {
   if (!isEmailServiceAvailable()) {
-    throw new Error('Email service is not configured');
+    throw new Error("Email service is not configured");
   }
 
   if (!emailTransporter) {
-    throw new Error('Email transporter not initialized');
+    throw new Error("Email transporter not initialized");
   }
 
   try {
@@ -97,7 +102,7 @@ export async function sendEmail(
       to,
       subject,
       html: htmlContent,
-      text: textContent || htmlContent.replace(/<[^>]*>/g, ''),
+      text: textContent || htmlContent.replace(/<[^>]*>/g, ""),
     };
 
     const info = await emailTransporter.sendMail(mailOptions);
@@ -109,10 +114,10 @@ export async function sendEmail(
         subject,
         response: info.response,
       },
-      'Email sent successfully'
+      "Email sent successfully"
     );
   } catch (error) {
-    logger.error({ error, to, subject }, 'Failed to send email');
+    logger.error({ error, to, subject }, "Failed to send email");
     throw error;
   }
 }
@@ -245,11 +250,11 @@ export function generateUserInviteEmail(params: {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to Ruigi Auth</title>
+  <title>Welcome to Rugi Auth</title>
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #002455; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background-color: #f4f4f4; padding: 20px; border-radius: 8px;">
-    <h1 style="color: #050E3C; margin-top: 0;">Welcome to Ruigi Auth</h1>
+    <h1 style="color: #050E3C; margin-top: 0;">Welcome to Rugi Auth</h1>
     <p>${introText}</p>
 
     <h2 style="color: #050E3C;">Your Applications</h2>
@@ -391,7 +396,7 @@ export async function sendUserInviteEmail(params: {
   isNewUser: boolean;
 }): Promise<void> {
   const subject = params.isNewUser
-    ? "Welcome to Ruigi Auth - Your Account Details"
+    ? "Welcome to Rugi Auth - Your Account Details"
     : "You have been granted access to new applications";
   const htmlContent = generateUserInviteEmail(params);
 
