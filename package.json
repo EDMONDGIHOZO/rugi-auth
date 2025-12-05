@@ -1,19 +1,19 @@
 {
   "name": "rugi-auth",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Centralized authentication service with multi-app role management",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-"exports": {
+  "exports": {
     ".": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./client": {
-        "types": "./dist/client.d.ts",
-        "default": "./dist/client.js"
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
     }
-},
+  },
   "files": [
     "dist",
     "prisma"
@@ -51,27 +51,27 @@
   ],
   "author": "EDMONDGIHOZO",
   "license": "MIT",
-"repository": {
+  "repository": {
     "type": "git",
     "url": "git+https://github.com/EDMONDGIHOZO/rugi-auth.git"
-},
-"homepage": "https://github.com/EDMONDGIHOZO/rugi-auth#readme",
-"bugs": {
+  },
+  "homepage": "https://github.com/EDMONDGIHOZO/rugi-auth#readme",
+  "bugs": {
     "url": "https://github.com/EDMONDGIHOZO/rugi-auth/issues"
-},
+  },
   "dependencies": {
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.0.1"
-},
-"peerDependencies": {
+  },
+  "peerDependencies": {
     "express": "^4.18.0 || ^5.0.0"
-},
-"peerDependenciesMeta": {
+  },
+  "peerDependenciesMeta": {
     "express": {
-        "optional": false
+      "optional": false
     }
-},
-"optionalDependencies": {
+  },
+  "optionalDependencies": {
     "@prisma/client": "5.7.1",
     "argon2": "^0.31.2",
     "axios": "^1.13.2",
