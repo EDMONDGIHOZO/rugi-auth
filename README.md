@@ -342,7 +342,7 @@ src/
 
 ## License
 
-MIT © [edmondgi](https://github.com/edmondgi)
+MIT © [EDMONDGIHOZO](https://github.com/EDMONDGIHOZO)
 
 ---
 

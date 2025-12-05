@@ -37,7 +37,7 @@
     "oauth",
     "multi-tenant"
   ],
-"author": "edmondgi",
+"author": "EDMONDGIHOZO",
   "license": "MIT",
 "dependencies": {
     "@prisma/client": "5.7.1",
