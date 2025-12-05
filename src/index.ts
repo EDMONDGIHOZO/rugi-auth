@@ -27,3 +27,4 @@ export * from './services/user.service';
 
 // Export utils
 export * from './utils/logger';
+export * from "./utils/errors";

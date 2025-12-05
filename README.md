@@ -1,545 +1,353 @@
-## Rugi Auth
+# Rugi Auth
 
-A production-grade, centralized authentication service (`rugi-auth`) that enables multiple applications to share a single user base while maintaining separate role-based access control per application.
+[![npm version](https://img.shields.io/npm/v/rugi-auth.svg)](https://www.npmjs.com/package/rugi-auth)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org)
+
+A production-ready, centralized authentication service that enables multiple applications to share a single user base with app-specific role-based access control.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage in Your App](#usage-in-your-app)
+- [API Reference](#api-reference)
+- [JWT Token Structure](#jwt-token-structure)
+- [Deployment](#deployment)
+- [Security](#security)
+- [License](#license)
+
+---
 
 ## Features
 
-- **Centralized Authentication**: Single user account across all applications
-- **Multi-App Role Management**: Different roles per user per application
-- **JWT with RS256**: Asymmetric key signing for secure token verification
-- **Token Rotation**: Refresh tokens are rotated on each use for enhanced security
-- **Argon2id Password Hashing**: Industry-standard password security
-- **Comprehensive Audit Logging**: Track all authentication events
-- **Rate Limiting**: Protection against brute force attacks
-- **Production-Ready**: Security headers, CORS, input validation, error handling
+| Feature | Description |
+|---------|-------------|
+| 🔐 **Centralized Auth** | Single user account across all your applications |
+| 👥 **Multi-App Roles** | Different roles per user per application |
+| 🔑 **RS256 JWT** | Asymmetric key signing for secure token verification |
+| 🔄 **Token Rotation** | Refresh tokens are rotated on each use |
+| 🛡️ **Argon2id Hashing** | Industry-standard password security |
+| 📝 **Audit Logging** | Track all authentication events |
+| ⚡ **Rate Limiting** | Built-in brute force protection |
+| 🌐 **OAuth Support** | Google, GitHub, and more |
 
-## Architecture
+---
 
-### Database Schema
+## Installation
 
-- **users**: User accounts with email, password hash, MFA support
-- **apps**: Client applications (PUBLIC or CONFIDENTIAL)
-- **roles**: Reusable role definitions
-- **user_app_roles**: Many-to-many relationship between users, apps, and roles
-- **refresh_tokens**: Server-side refresh token storage with rotation
-- **auth_audit**: Comprehensive audit trail of all auth events
-
-### Security Features
-
-- RS256 JWT signing (asymmetric keys)
-- Argon2id password hashing (memory: 64MB, time: 3, parallelism: 4)
-- Refresh token rotation (prevents replay attacks)
-- Rate limiting on authentication endpoints
-- Helmet.js security headers
-- CORS configuration
-- Input validation with Joi
-- SQL injection prevention (Prisma parameterized queries)
-
-## Prerequisites
-
-- Node.js 18+ (LTS recommended)
-- PostgreSQL 15+
-- npm or yarn
-
-## Quick Start
-
-### 1. Clone and Install
+### As a Standalone Service
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/your-org/rugi-auth.git
 cd rugi-auth
 npm install
 ```
 
-### 2. Set Up Environment
+### As an npm Package
 
-Copy the example environment file:
+```bash
+npm install rugi-auth
+```
+
+---
+
+## Quick Start
+
+### 1. Setup Environment
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and configure (optional - defaults are provided):
-
 ```env
-# Database connection for the application
-DATABASE_URL="postgresql://rugi:rugi_password@localhost:5432/rugi_auth?schema=public"
-
-# PostgreSQL container configuration (optional - docker-compose has defaults)
-POSTGRES_USER=rugi
-POSTGRES_PASSWORD=rugi_password
-POSTGRES_DB=rugi_auth
-
-# Application configuration
+DATABASE_URL="postgresql://rugi:rugi_password@localhost:5432/rugi_auth"
 JWT_ISSUER="rugi-auth"
 PORT=3000
-CORS_ORIGIN="http://localhost:3000,http://localhost:3001,https://yourdomain.com"
 ```
 
-**Note**: The Docker Compose setup now includes default values for `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB`. If you don't provide a `.env` file, it will use these defaults:
-- `POSTGRES_USER=rugi`
-- `POSTGRES_PASSWORD=rugi_password`
-- `POSTGRES_DB=rugi_auth`
-
-The database and user will be **automatically created** on first startup. The `DATABASE_URL` should match these values (or point to your own PostgreSQL instance).
-
-### 3. Start PostgreSQL
-
-Using Docker Compose:
+### 2. Start Database
 
 ```bash
 docker-compose up -d postgres
 ```
 
-The Docker Compose setup will:
-- Read environment variables from your `.env` file (if it exists)
-- Fall back to default values if variables are not set
-- Automatically create the database and user on first startup
-- Run the initialization script to ensure proper setup
-
-Or use your own PostgreSQL instance and update `DATABASE_URL` in `.env` accordingly.
-
-### 4. Generate RSA Keys
+### 3. Initialize
 
 ```bash
-npm run generate:keys
+npm run generate:keys      # Generate RSA keys
+npm run prisma:generate    # Generate Prisma client
+npm run prisma:migrate     # Run migrations
+npm run prisma:seed        # Seed default data
 ```
 
-This creates `keys/private.pem` and `keys/public.pem` (gitignored).
-
-### 5. Set Up Database
+### 4. Run
 
 ```bash
-# Generate Prisma client
-npm run prisma:generate
-
-# Run migrations
-npm run prisma:migrate
-
-# Seed database (creates default roles and example apps)
-npm run prisma:seed
+npm run dev                # Development
+npm run start              # Production
 ```
 
-### 6. Start Development Server
+🚀 Server running at `http://localhost:3000`
+
+---
+
+## Usage in Your App
+
+### Option 1: Verify Tokens via JWKS (Recommended)
+
+Install dependencies in your Express app:
 
 ```bash
-npm run dev
+npm install jsonwebtoken jwks-rsa
 ```
 
-The server will start on `http://localhost:3000`.
+Create auth middleware:
 
-## API Endpoints
+```javascript
+const jwt = require("jsonwebtoken");
+const jwksClient = require("jwks-rsa");
 
-### Public Endpoints
+const client = jwksClient({
+  jwksUri: "https://your-auth-server.com/.well-known/jwks.json",
+  cache: true,
+});
 
-#### POST /register
-Register a new user.
+function authMiddleware(req, res, next) {
+  const token = req.headers.authorization?.substring(7);
+  if (!token) return res.status(401).json({ error: "No token" });
 
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "password": "SecurePassword123!"
-}
-```
-
-**Response:**
-```json
-{
-  "message": "User registered successfully",
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "created_at": "2024-01-01T00:00:00.000Z"
-  }
-}
-```
-
-#### POST /login
-Login and receive access + refresh tokens.
-
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "password": "SecurePassword123!",
-  "client_id": "ecommerce-app-id",
-  "client_secret": "ecommerce-secret-123" // Required for CONFIDENTIAL apps
-}
-```
-
-**Response:**
-```json
-{
-  "access_token": "eyJhbGciOiJSUzI1NiIs...",
-  "refresh_token": "uuid-opaque-token",
-  "token_type": "Bearer",
-  "expires_in": 604800
-}
-```
-
-#### POST /refresh
-Refresh access token using refresh token.
-
-**Request:**
-```json
-{
-  "refresh_token": "uuid-opaque-token",
-  "client_id": "ecommerce-app-id"
-}
-```
-
-**Response:**
-```json
-{
-  "access_token": "eyJhbGciOiJSUzI1NiIs...",
-  "refresh_token": "new-uuid-opaque-token", // Rotated
-  "token_type": "Bearer",
-  "expires_in": 604800
-}
-```
-
-#### POST /revoke
-Revoke a refresh token.
-
-**Request:**
-```json
-{
-  "refresh_token": "uuid-opaque-token"
-}
-```
-
-#### GET /.well-known/jwks.json
-Get public key in JWKS format for token verification.
-
-**Response:**
-```json
-{
-  "keys": [
-    {
-      "kty": "RSA",
-      "use": "sig",
-      "alg": "RS256",
-      "kid": "1",
-      "n": "...",
-      "e": "AQAB"
+  jwt.verify(
+    token,
+    (header, cb) => {
+      client.getSigningKey(header.kid, (err, key) => {
+        cb(err, key?.getPublicKey());
+      });
+    },
+    { algorithms: ["RS256"], issuer: "rugi-auth" },
+    (err, decoded) => {
+      if (err) return res.status(401).json({ error: "Invalid token" });
+      req.user = { userId: decoded.sub, roles: decoded.roles };
+      next();
     }
-  ]
+  );
 }
+
+// Protect your routes
+app.get("/profile", authMiddleware, (req, res) => {
+  res.json({ userId: req.user.userId, roles: req.user.roles });
+});
 ```
 
-#### GET /me
-Get current user information (requires authentication).
+### Option 2: Import Package Directly
 
-**Headers:**
+```javascript
+import { authMiddleware, roleMiddleware, errorMiddleware } from "rugi-auth";
+
+// Require authentication
+app.get("/profile", authMiddleware, (req, res) => {
+  res.json({ userId: req.user.userId });
+});
+
+// Require specific role
+app.get("/admin", authMiddleware, roleMiddleware("admin"), (req, res) => {
+  res.json({ message: "Welcome, admin!" });
+});
+
+// Error handler (add last)
+app.use(errorMiddleware);
 ```
-Authorization: Bearer <access_token>
+
+### Available Middleware
+
+| Middleware | Description |
+|------------|-------------|
+| `authMiddleware` | Requires valid JWT, attaches `req.user` |
+| `optionalAuthMiddleware` | Attaches user if token present, continues if not |
+| `roleMiddleware(role)` | Requires user to have specific role |
+| `anyRoleMiddleware(...roles)` | Requires any of the specified roles |
+
+📖 **[Full Integration Guide →](docs/INTEGRATION.md)**
+
+📁 **[Working Examples →](examples/)**
+
+---
+
+## API Reference
+
+### Authentication
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/register` | Register new user |
+| `POST` | `/login` | Login, get tokens |
+| `POST` | `/refresh` | Refresh access token |
+| `POST` | `/revoke` | Revoke refresh token |
+| `GET` | `/me` | Get current user |
+| `GET` | `/.well-known/jwks.json` | Public keys (JWKS) |
+
+### Example: Login
+
+**Request:**
+
+```bash
+curl -X POST https://auth.example.com/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecurePassword123!",
+    "client_id": "your-app-client-id"
+  }'
 ```
 
 **Response:**
+
 ```json
 {
-  "id": "uuid",
-  "email": "user@example.com",
-  "isEmailVerified": false,
-  "mfaEnabled": false,
-  "createdAt": "2024-01-01T00:00:00.000Z"
+  "access_token": "eyJhbGciOiJSUzI1NiIs...",
+  "refresh_token": "550e8400-e29b-41d4-a716-446655440000",
+  "token_type": "Bearer",
+  "expires_in": 604800
 }
 ```
 
 ### Admin Endpoints
 
-All admin endpoints require authentication via `Authorization: Bearer <access_token>` header.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/apps` | Register client app |
+| `POST` | `/apps/:id/roles` | Create app role |
+| `POST` | `/users/:id/roles` | Assign user role |
+| `GET` | `/audit` | View audit logs |
 
-#### POST /apps
-Register a new client application.
-
-**Request:**
-```json
-{
-  "name": "My App",
-  "type": "CONFIDENTIAL", // or "PUBLIC"
-  "redirect_uris": ["https://myapp.com/callback"]
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Application created successfully",
-  "app": {
-    "id": "uuid",
-    "name": "My App",
-    "client_id": "uuid",
-    "client_secret": "uuid-uuid", // Only shown once!
-    "type": "CONFIDENTIAL",
-    "redirect_uris": ["https://myapp.com/callback"],
-    "created_at": "2024-01-01T00:00:00.000Z"
-  }
-}
-```
-
-#### POST /apps/:appId/roles
-Create or verify a role for an app.
-
-**Request:**
-```json
-{
-  "role_name": "moderator"
-}
-```
-
-#### POST /users/:userId/roles
-Assign a role to a user for a specific app.
-
-**Request:**
-```json
-{
-  "app_id": "uuid",
-  "role_name": "owner"
-}
-```
-
-#### GET /audit
-List audit logs with filtering and pagination.
-
-**Query Parameters:**
-- `user_id` (optional): Filter by user ID
-- `action` (optional): Filter by action (LOGIN, REFRESH, REVOKE, ROLE_ASSIGN, REGISTER)
-- `page` (optional, default: 1): Page number
-- `limit` (optional, default: 20): Items per page
-- `start_date` (optional): Start date filter
-- `end_date` (optional): End date filter
+---
 
 ## JWT Token Structure
 
-Access tokens contain the following claims:
+Access tokens contain these claims:
 
-- `sub`: User ID
-- `aud`: Client ID (application identifier)
-- `tid`: App ID (application UUID)
-- `roles`: Array of role names for this user in this app
-- `iss`: Issuer (from `JWT_ISSUER` env var)
-- `iat`: Issued at timestamp
-- `exp`: Expiration timestamp
-
-**Example:**
 ```json
 {
   "sub": "user-uuid",
-  "aud": "ecommerce-app-id",
+  "aud": "client-id",
   "tid": "app-uuid",
-  "roles": ["owner", "admin"],
+  "roles": ["admin", "user"],
   "iss": "rugi-auth",
   "iat": 1704067200,
-  "exp": 1704070800
+  "exp": 1704672000
 }
 ```
 
-## Integration Guide
+| Claim | Description |
+|-------|-------------|
+| `sub` | User ID |
+| `aud` | Client ID (audience) |
+| `tid` | App ID (tenant) |
+| `roles` | User's roles for this app |
+| `iss` | Issuer |
+| `iat` / `exp` | Issued at / Expires at |
 
-### Verifying Tokens in External Applications
+---
 
-1. **Fetch Public Key**: GET `https://auth-service.com/.well-known/jwks.json`
+## Deployment
 
-2. **Verify Token**: Use a JWT library with RS256 support:
+### With PM2 (Recommended)
 
-```javascript
-// Node.js example
-const jwt = require('jsonwebtoken');
-const jwksClient = require('jwks-rsa');
-
-const client = jwksClient({
-  jwksUri: 'https://auth-service.com/.well-known/jwks.json'
-});
-
-function getKey(header, callback) {
-  client.getSigningKey(header.kid, (err, key) => {
-    const signingKey = key.publicKey || key.rsaPublicKey;
-    callback(null, signingKey);
-  });
-}
-
-jwt.verify(token, getKey, {
-  audience: 'your-client-id',
-  issuer: 'rugi-auth',
-  algorithms: ['RS256']
-}, (err, decoded) => {
-  if (err) {
-    // Token invalid
-  } else {
-    // Token valid
-    // decoded.roles contains user roles for this app
-    // decoded.sub contains user ID
-  }
-});
+```bash
+npm run build
+npm run prisma:generate
+npm run start:pm2
 ```
 
-3. **Check Roles**: Verify the user has required roles in `decoded.roles` array.
+### PM2 Commands
 
-## Development
+```bash
+npm run start:pm2      # Start
+npm run stop:pm2       # Stop
+npm run restart:pm2    # Restart
+npm run logs:pm2       # View logs
+```
 
-### Scripts
+### With Docker
 
-- `npm run dev`: Start development server with hot reload
-- `npm run build`: Build TypeScript to JavaScript
-- `npm run start`: Start production server
-- `npm run prisma:generate`: Generate Prisma client
-- `npm run prisma:migrate`: Run database migrations
-- `npm run prisma:studio`: Open Prisma Studio (database GUI)
-- `npm run prisma:seed`: Seed database with default data
-- `npm run generate:keys`: Generate RSA key pair
-- `npm run type-check`: Type check without building
+```bash
+docker-compose up -d
+```
 
-### Project Structure
+### Production Checklist
+
+- [ ] Set `NODE_ENV=production`
+- [ ] Configure `DATABASE_URL` for production database
+- [ ] Generate and secure RSA keys
+- [ ] Set `CORS_ORIGIN` to allowed domains
+- [ ] Use HTTPS (via reverse proxy)
+- [ ] Configure rate limits for your traffic
+- [ ] Set up log rotation
+- [ ] Enable database backups
+
+---
+
+## Security
+
+### Built-in Protections
+
+- **RS256 JWT** - Asymmetric keys, verify without secret
+- **Argon2id** - Memory-hard password hashing (64MB, time: 3)
+- **Token Rotation** - Refresh tokens invalidated on use
+- **Rate Limiting** - Configurable per-endpoint limits
+- **Helmet.js** - Security headers
+- **Joi Validation** - Input sanitization
+- **Prisma** - SQL injection prevention
+
+### Best Practices
+
+1. Never commit `keys/private.pem`
+2. Use different secrets per environment
+3. Rotate client secrets periodically
+4. Always use HTTPS in production
+5. Monitor audit logs regularly
+
+---
+
+## Project Structure
 
 ```
 src/
-├── config/          # Configuration (env, database, keys)
+├── config/          # Environment, database, keys
 ├── controllers/     # Request handlers
+├── middleware/      # Auth, rate limit, validation
+├── routes/          # API routes
 ├── services/        # Business logic
-├── middleware/      # Express middleware
-├── routes/          # Route definitions
-├── utils/           # Utilities (logger, errors, validators)
-└── app.ts          # Express app setup
+└── utils/           # Logger, errors, validators
 ```
 
-### Database Migrations
+---
 
-Create a new migration:
+## Scripts
 
-```bash
-npm run prisma:migrate -- --name migration_name
-```
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Development server with hot reload |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run generate:keys` | Generate RSA key pair |
+| `npm run prisma:migrate` | Run database migrations |
+| `npm run prisma:studio` | Open database GUI |
 
-## Security Considerations
-
-1. **Private Keys**: Never commit `keys/private.pem` to version control
-2. **Environment Variables**: Keep `.env` secure and use different values in production
-3. **Client Secrets**: Store securely and rotate periodically
-4. **Rate Limiting**: Adjust limits based on your traffic patterns
-5. **CORS**: Configure allowed origins for production
-6. **HTTPS**: Always use HTTPS in production
-7. **Token Expiry**: Access tokens expire in 10 minutes (configurable)
-8. **Refresh Token Rotation**: Old refresh tokens are revoked on use
-
-## Production Deployment
-
-### Prerequisites
-
-- Node.js 18+ installed on production server
-- PM2 installed globally: `npm install -g pm2`
-- PostgreSQL database (managed or self-hosted)
-- RSA keys generated and securely stored
-
-### Deployment Steps
-
-1. **Build the application:**
-   ```bash
-   npm install --production
-   npm run build
-   npm run prisma:generate
-   ```
-
-2. **Set up environment variables:**
-   Create a `.env` file with production values:
-   ```env
-   NODE_ENV=production
-   PORT=3000
-   DATABASE_URL="postgresql://user:password@host:55432/dbname?schema=public"
-   JWT_ISSUER="rugi-auth"
-   CORS_ORIGIN="https://yourdomain.com,https://app.yourdomain.com"
-   # ... other required variables
-   ```
-
-3. **Run database migrations:**
-   ```bash
-   npm run prisma:migrate deploy
-   ```
-
-4. **Start with PM2:**
-   ```bash
-   npm run start:pm2
-   ```
-
-   Or manually:
-   ```bash
-   pm2 start ecosystem.config.js
-   ```
-
-5. **Save PM2 configuration:**
-   ```bash
-   pm2 save
-   pm2 startup  # Follow instructions to enable auto-start on reboot
-   ```
-
-### PM2 Management Commands
-
-- **Start:** `npm run start:pm2` or `pm2 start ecosystem.config.js`
-- **Stop:** `npm run stop:pm2` or `pm2 stop rugi-auth`
-- **Restart:** `npm run restart:pm2` or `pm2 restart rugi-auth`
-- **Reload (zero-downtime):** `npm run reload:pm2` or `pm2 reload rugi-auth`
-- **View logs:** `npm run logs:pm2` or `pm2 logs rugi-auth`
-- **Monitor:** `npm run monitor:pm2` or `pm2 monit`
-- **Delete:** `npm run delete:pm2` or `pm2 delete rugi-auth`
-
-### PM2 Configuration
-
-The `ecosystem.config.js` file is configured with:
-- **Cluster mode**: Uses all available CPU cores for load balancing
-- **Auto-restart**: Automatically restarts on crashes
-- **Memory limit**: Restarts if memory exceeds 1GB
-- **Logging**: Logs stored in `./logs/` directory
-- **Graceful shutdown**: Handles SIGTERM/SIGINT signals
-
-### Additional Production Considerations
-
-1. **Reverse Proxy**: Use nginx or similar to handle HTTPS and route traffic
-2. **Monitoring**: Set up PM2 monitoring or integrate with external monitoring services
-3. **Log Rotation**: Configure log rotation for PM2 logs
-4. **Database**: Use a managed PostgreSQL service or configure connection pooling
-5. **RSA Keys**: Store keys securely (environment variables, secret management, or encrypted storage)
-6. **Backups**: Set up automated database backups
-7. **Health Checks**: Monitor `/health` endpoint
-8. **Rate Limiting**: Adjust rate limits based on production traffic
-9. **CORS**: Configure `CORS_ORIGIN` in `.env` as a comma-separated list of allowed origins (e.g., `"https://app1.com,https://app2.com"`). Wildcards are not supported for security.
-10. **HTTPS**: Always use HTTPS in production (configure at reverse proxy level)
-
-### Example Nginx Configuration
-
-```nginx
-server {
-    listen 80;
-    server_name auth.yourdomain.com;
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name auth.yourdomain.com;
-
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/key.pem;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
+---
 
 ## License
 
-MIT
+MIT © [edmondgi](https://github.com/edmondgi)
 
-## Support
+---
 
-For issues and questions, please open an issue on the repository.
+## Links
 
+- 📖 [Integration Guide](docs/INTEGRATION.md)
+- 📁 [Examples](examples/)
+- 🐛 [Report Issue](https://github.com/your-org/rugi-auth/issues)
