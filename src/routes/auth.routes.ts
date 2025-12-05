@@ -1,4 +1,5 @@
 import { Router } from "express";
+import crypto from "crypto";
 import Joi from "joi";
 import {
   registerController,
@@ -71,6 +72,13 @@ router.get("/.well-known/jwks.json", (_req, res) => {
     // Convert PEM to JWK format
     const jwk = pemJwk.pem2jwk(publicKey);
 
+    // Generate key ID from public key fingerprint (first 8 chars of SHA-256 hash)
+    const kid = crypto
+      .createHash("sha256")
+      .update(publicKey)
+      .digest("hex")
+      .substring(0, 8);
+
     // Add JWKS metadata
     const jwks = {
       keys: [
@@ -78,7 +86,7 @@ router.get("/.well-known/jwks.json", (_req, res) => {
           ...jwk,
           use: "sig",
           alg: "RS256",
-          kid: "1", // Key ID (should be unique per key, can be derived from key hash)
+          kid,
         },
       ],
     };

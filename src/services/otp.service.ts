@@ -9,14 +9,16 @@ import { getUserRoles } from './role.service';
 import { generateAccessToken } from './token.service';
 import { v4 as uuidv4 } from 'uuid';
 
+import crypto from "crypto";
+
 /**
- * Generate a random OTP code
+ * Generate a cryptographically secure random OTP code
  */
 function generateOTPCode(length: number = env.otp.length): string {
   const digits = '0123456789';
   let code = '';
   for (let i = 0; i < length; i++) {
-    code += digits.charAt(Math.floor(Math.random() * digits.length));
+    code += digits.charAt(crypto.randomInt(0, digits.length));
   }
   return code;
 }

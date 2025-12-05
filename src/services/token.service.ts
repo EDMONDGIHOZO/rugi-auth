@@ -1,7 +1,20 @@
 import jwt from 'jsonwebtoken';
+import crypto from "crypto";
 import { getPrivateKey, getPublicKey } from '../config/keys';
 import { env } from '../config/env';
 import { AuthError } from '../utils/errors';
+
+/**
+ * Generate key ID from public key fingerprint
+ */
+function getKeyId(): string {
+  const publicKey = getPublicKey();
+  return crypto
+    .createHash('sha256')
+    .update(publicKey)
+    .digest('hex')
+    .substring(0, 8);
+}
 
 export interface TokenPayload {
   sub: string; // user_id
@@ -33,8 +46,9 @@ export function generateAccessToken(
   };
 
   return jwt.sign(payload, privateKey, {
-    algorithm: 'RS256',
+    algorithm: "RS256",
     expiresIn: env.jwt.accessTokenExpiry,
+    keyid: getKeyId(),
   });
 }
 

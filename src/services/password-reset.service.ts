@@ -1,19 +1,20 @@
-import { prisma } from '../config/database';
-import { hashPassword } from './password.service';
-import { sendPasswordResetEmail } from './email.service';
-import { getExpiryDate } from '../utils/time';
-import { env } from '../config/env';
-import { AuthError } from '../utils/errors';
-import { AuditAction } from '@prisma/client';
+import crypto from "crypto";
+import { prisma } from "../config/database";
+import { hashPassword } from "./password.service";
+import { sendPasswordResetEmail } from "./email.service";
+import { getExpiryDate } from "../utils/time";
+import { env } from "../config/env";
+import { AuthError } from "../utils/errors";
+import { AuditAction } from "@prisma/client";
 
 /**
- * Generate a random numeric OTP code for password reset
+ * Generate a cryptographically secure random OTP code for password reset
  */
 function generatePasswordResetOTP(length: number = env.otp.length): string {
-  const digits = '0123456789';
-  let code = '';
+  const digits = "0123456789";
+  let code = "";
   for (let i = 0; i < length; i++) {
-    code += digits.charAt(Math.floor(Math.random() * digits.length));
+    code += digits.charAt(crypto.randomInt(0, digits.length));
   }
   return code;
 }
@@ -68,8 +69,8 @@ export async function requestPasswordReset(email: string): Promise<void> {
   } catch (error) {
     // Log error but don't fail the request
     // Token is already created, user can request again if needed
-    console.error('Failed to send password reset email:', error);
-    throw new Error('Failed to send password reset email');
+    console.error("Failed to send password reset email:", error);
+    throw new Error("Failed to send password reset email");
   }
 
   // Audit log
@@ -98,17 +99,17 @@ export async function resetPassword(
   });
 
   if (!resetToken) {
-    throw new AuthError('Invalid or expired reset token');
+    throw new AuthError("Invalid or expired reset token");
   }
 
   // Check if already used
   if (resetToken.used) {
-    throw new AuthError('Reset token has already been used');
+    throw new AuthError("Reset token has already been used");
   }
 
   // Check if expired
   if (resetToken.expiresAt < new Date()) {
-    throw new AuthError('Reset token has expired');
+    throw new AuthError("Reset token has expired");
   }
 
   // Hash new password
@@ -171,4 +172,3 @@ export async function verifyResetToken(token: string): Promise<boolean> {
 
   return true;
 }
-
