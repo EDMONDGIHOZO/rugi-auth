@@ -1,13 +1,13 @@
 {
   "name": "rugi-auth",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Centralized authentication service with multi-app role management",
-"main": "dist/index.js",
-"types": "dist/index.d.ts",
-"files": [
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
     "dist",
     "prisma"
-],
+  ],
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.build.json",
@@ -37,9 +37,9 @@
     "oauth",
     "multi-tenant"
   ],
-"author": "EDMONDGIHOZO",
+  "author": "EDMONDGIHOZO",
   "license": "MIT",
-"dependencies": {
+  "dependencies": {
     "@prisma/client": "5.7.1",
     "argon2": "^0.31.2",
     "axios": "^1.13.2",
