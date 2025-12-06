@@ -94,7 +94,7 @@ docker-compose up -d postgres
 npm run generate:keys      # Generate RSA keys
 npm run prisma:generate    # Generate Prisma client
 npm run prisma:migrate     # Run migrations
-npm run prisma:seed        # Seed default data
+npm run init:app           # Initialize default app
 ```
 
 ### 4. Run
@@ -342,6 +342,7 @@ src/
 | `npm run generate:keys` | Generate RSA key pair |
 | `npm run prisma:migrate` | Run database migrations |
 | `npm run prisma:studio` | Open database GUI |
+| `npm run init:app` | Initialize default app with credentials |
 
 ---
 

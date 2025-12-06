@@ -34,7 +34,7 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
     "generate:keys": "tsx scripts/generate-keys.ts",
-    "dev:reset-app": "tsx scripts/reset-default-app.ts",
+    "init:app": "tsx scripts/init-app.ts",
     "dev:create-superadmin": "tsx scripts/create-superadmin.ts",
     "migrate:roles": "tsx scripts/migrate-roles-to-app-specific.ts",
     "lint": "eslint src --ext .ts",
