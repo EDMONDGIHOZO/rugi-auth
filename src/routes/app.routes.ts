@@ -16,7 +16,7 @@ import {
 } from '../middleware/validation.middleware';
 import {appValidators, paramValidators, emailConfigValidators} from '../utils/validators';
 import {authMiddleware} from '../middleware/auth.middleware';
-import {superadminMiddleware} from '../middleware/superadmin.middleware';
+import {superAdminMiddleware} from '../middleware/superadmin.middleware';
 import {
     getEmailConfigController,
     createEmailConfigController,
@@ -115,7 +115,7 @@ router.post(
 router.get(
     '/:appId/email-config',
     validateParams(paramValidators.appId),
-    superadminMiddleware,
+    superAdminMiddleware,
     getEmailConfigController
 );
 
@@ -126,7 +126,7 @@ router.get(
 router.post(
     '/:appId/email-config',
     validateParams(paramValidators.appId),
-    superadminMiddleware,
+    superAdminMiddleware,
     validateBody(emailConfigValidators.create),
     createEmailConfigController
 );
@@ -138,7 +138,7 @@ router.post(
 router.patch(
     '/:appId/email-config',
     validateParams(paramValidators.appId),
-    superadminMiddleware,
+    superAdminMiddleware,
     validateBody(emailConfigValidators.update),
     updateEmailConfigController
 );
@@ -150,7 +150,7 @@ router.patch(
 router.delete(
     '/:appId/email-config',
     validateParams(paramValidators.appId),
-    superadminMiddleware,
+    superAdminMiddleware,
     deleteEmailConfigController
 );
 

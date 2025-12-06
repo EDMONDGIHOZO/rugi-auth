@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../config/database";
 import { NotFoundError } from "../utils/errors";
-
-const prisma = new PrismaClient();
 
 export interface CreateEmailConfigInput {
   appId: string;
