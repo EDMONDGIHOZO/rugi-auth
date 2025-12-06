@@ -31,17 +31,26 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Request logging
+// Request logging - only log errors and warnings (4xx, 5xx)
+// Successful requests (2xx, 3xx) are not logged to reduce noise
 app.use(
   pinoHttp({
     logger,
+    autoLogging: {
+      ignore: (req) => {
+        // Skip logging for health checks and docs
+        return req.url === "/health" || req.url === "/docs" || req.url.startsWith("/docs/");
+      },
+    },
     customLogLevel: (_req, res, err) => {
       if (res.statusCode >= 400 && res.statusCode < 500) {
         return "warn";
       } else if (res.statusCode >= 500 || err) {
         return "error";
       }
-      return "info";
+      // Return a level below the configured LOG_LEVEL to suppress successful requests
+      // This won't be logged if LOG_LEVEL is "info" or higher (default)
+      return "trace";
     },
     customSuccessMessage: (req, res) => {
       return `${req.method} ${req.url} ${res.statusCode}`;

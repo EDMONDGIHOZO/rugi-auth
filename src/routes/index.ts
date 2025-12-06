@@ -5,20 +5,22 @@ import userRoutes from './user.routes';
 import auditRoutes from './audit.routes';
 import roleRoutes from "./role.routes";
 import authSettingsRoutes from './auth-settings.routes';
-import oauthRoutes from './oauth.routes';
+import emailSettingsRoutes from "./email-settings.routes";
+import oauthRoutes from "./oauth.routes";
 
 const router = Router();
 
 // Public authentication routes
-router.use('/', authRoutes);
-router.use('/oauth', oauthRoutes);
+router.use("/", authRoutes);
+router.use("/oauth", oauthRoutes);
 
 // Admin routes (require authentication)
-router.use('/apps', appRoutes);
-router.use('/users', userRoutes);
-router.use('/audit', auditRoutes);
+router.use("/apps", appRoutes);
+router.use("/users", userRoutes);
+router.use("/audit", auditRoutes);
 router.use("/roles", roleRoutes);
-router.use('/auth-settings', authSettingsRoutes);
+router.use("/auth-settings", authSettingsRoutes);
+router.use("/settings", emailSettingsRoutes);
 
 export default router;
 

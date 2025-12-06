@@ -14,15 +14,8 @@ import {
     validateParams,
     validateQuery,
 } from '../middleware/validation.middleware';
-import {appValidators, paramValidators, emailConfigValidators} from '../utils/validators';
+import {appValidators, paramValidators} from '../utils/validators';
 import {authMiddleware} from '../middleware/auth.middleware';
-import {superAdminMiddleware} from '../middleware/superadmin.middleware';
-import {
-    getEmailConfigController,
-    createEmailConfigController,
-    updateEmailConfigController,
-    deleteEmailConfigController,
-} from '../controllers/email-config.controller';
 
 const router = Router();
 
@@ -106,52 +99,6 @@ router.post(
     validateParams(paramValidators.appId),
     validateBody(appValidators.assignRole),
     assignAppRoleController
-);
-
-/**
- * GET /apps/:appId/email-config
- * Get email configuration for an app (superadmin only)
- */
-router.get(
-    '/:appId/email-config',
-    validateParams(paramValidators.appId),
-    superAdminMiddleware,
-    getEmailConfigController
-);
-
-/**
- * POST /apps/:appId/email-config
- * Create email configuration for an app (superadmin only)
- */
-router.post(
-    '/:appId/email-config',
-    validateParams(paramValidators.appId),
-    superAdminMiddleware,
-    validateBody(emailConfigValidators.create),
-    createEmailConfigController
-);
-
-/**
- * PATCH /apps/:appId/email-config
- * Update email configuration for an app (superadmin only)
- */
-router.patch(
-    '/:appId/email-config',
-    validateParams(paramValidators.appId),
-    superAdminMiddleware,
-    validateBody(emailConfigValidators.update),
-    updateEmailConfigController
-);
-
-/**
- * DELETE /apps/:appId/email-config
- * Delete email configuration for an app (superadmin only)
- */
-router.delete(
-    '/:appId/email-config',
-    validateParams(paramValidators.appId),
-    superAdminMiddleware,
-    deleteEmailConfigController
 );
 
 export default router;

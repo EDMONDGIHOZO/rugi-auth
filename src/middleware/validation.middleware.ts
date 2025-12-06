@@ -1,78 +1,88 @@
-import { Request, Response, NextFunction } from 'express';
+import {Request, Response, NextFunction} from 'express';
 import Joi from 'joi';
-import { ValidationError } from '../utils/errors';
+import {ValidationError} from '../utils/errors';
 
 /**
  * Middleware to validate request body using Joi schema
  */
 export function validateBody(schema: Joi.ObjectSchema) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    const { error, value } = schema.validate(req.body, {
-      abortEarly: false,
-      stripUnknown: true,
-    });
+    return (req: Request, _res: Response, next: NextFunction) => {
+        // Check if body exists
+        if (!req.body || typeof req.body !== 'object' || Object.keys(req.body).length === 0) {
+            throw new ValidationError('Request body is required', [
+                {
+                    field: 'body',
+                    message: 'Request body cannot be empty',
+                },
+            ]);
+        }
 
-    if (error) {
-      const details = error.details.map((detail) => ({
-        field: detail.path.join('.'),
-        message: detail.message,
-      }));
+        const {error, value} = schema.validate(req.body, {
+            abortEarly: false,
+            stripUnknown: true,
+        });
 
-      throw new ValidationError('Validation failed', details);
-    }
+        if (error) {
+            const details = error.details.map((detail) => ({
+                field: detail.path.join('.') || 'body',
+                message: detail.message,
+            }));
 
-    req.body = value;
-    next();
-  };
+            throw new ValidationError('Validation failed', details);
+        }
+
+        req.body = value;
+        next();
+    };
 }
 
 /**
  * Middleware to validate request parameters using Joi schema
  */
 export function validateParams(schema: Joi.ObjectSchema) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    const { error, value } = schema.validate(req.params, {
-      abortEarly: false,
-      stripUnknown: true,
-    });
+    return (req: Request, _res: Response, next: NextFunction) => {
+        const {error, value} = schema.validate(req.params, {
+            abortEarly: false,
+            stripUnknown: true,
+        });
 
-    if (error) {
-      const details = error.details.map((detail) => ({
-        field: detail.path.join('.'),
-        message: detail.message,
-      }));
+        if (error) {
+            const details = error.details.map((detail) => ({
+                field: detail.path.join('.'),
+                message: detail.message,
+            }));
 
-      throw new ValidationError('Invalid parameters', details);
-    }
+            throw new ValidationError('Invalid parameters', details);
+        }
 
-    req.params = value;
-    next();
-  };
+        req.params = value;
+        next();
+    };
 }
 
 /**
  * Middleware to validate query parameters using Joi schema
  */
 export function validateQuery(schema: Joi.ObjectSchema) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    const { error } = schema.validate(req.query, {
-      abortEarly: false,
-      stripUnknown: false, // Don't strip unknown to avoid mutating read-only req.query
-    });
+    return (req: Request, _res: Response, next: NextFunction) => {
+        const {error} = schema.validate(req.query, {
+            abortEarly: false,
+            stripUnknown: false, // Don't strip unknown to avoid mutating read-only req.query
+        });
 
-    if (error) {
-      const details = error.details.map((detail) => ({
-        field: detail.path.join('.'),
-        message: detail.message,
-      }));
+        if (error) {
+            const details = error.details.map((detail) => ({
+                field: detail.path.join('.'),
+                message: detail.message,
+            }));
 
-      throw new ValidationError('Invalid query parameters', details);
-    }
+            throw new ValidationError('Invalid query parameters', details);
+        }
 
-    // Note: req.query is read-only in Express, so we can't reassign it
-    // The validation ensures the query params are valid, which is sufficient
-    // Controllers can continue using req.query directly
-    next();
-  };
+        // Note: req.query is read-only in Express, so we can't reassign it
+        // The validation ensures the query params are valid, which is sufficient
+        // Controllers can continue using req.query directly
+        next();
+    };
 }
 

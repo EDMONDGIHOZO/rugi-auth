@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   getAuthSettingsController,
   createAuthSettingsController,
@@ -6,15 +6,15 @@ import {
   deleteAuthSettingsController,
   listAuthSettingsController,
   checkAuthMethodController,
-} from '../controllers/auth-settings.controller';
+} from "../controllers/auth-settings.controller";
 import {
   validateBody,
   validateParams,
   validateQuery,
-} from '../middleware/validation.middleware';
-import { authSettingsValidators, paramValidators } from '../utils/validators';
-import { authMiddleware } from '../middleware/auth.middleware';
-import { superAdminMiddleware } from '../middleware/superadmin.middleware';
+} from "../middleware/validation.middleware";
+import { authSettingsValidators, paramValidators } from "../utils/validators";
+import { authMiddleware } from "../middleware/auth.middleware";
+import { superAdminMiddleware } from "../middleware/superadmin.middleware";
 
 const router = Router();
 
@@ -26,7 +26,7 @@ router.use(authMiddleware);
  * List all authentication settings (superadmin only)
  */
 router.get(
-  '/',
+  "/",
   superAdminMiddleware,
   validateQuery(authSettingsValidators.list),
   listAuthSettingsController
@@ -37,7 +37,7 @@ router.get(
  * Get authentication settings for a specific app
  */
 router.get(
-  '/apps/:appId',
+  "/apps/:appId",
   validateParams(paramValidators.appId),
   getAuthSettingsController
 );
@@ -47,7 +47,7 @@ router.get(
  * Create authentication settings for an app (superadmin only)
  */
 router.post(
-  '/apps/:appId',
+  "/apps/:appId",
   superAdminMiddleware,
   validateParams(paramValidators.appId),
   validateBody(authSettingsValidators.create),
@@ -59,7 +59,7 @@ router.post(
  * Update authentication settings for an app (superadmin only)
  */
 router.patch(
-  '/apps/:appId',
+  "/apps/:appId",
   superAdminMiddleware,
   validateParams(paramValidators.appId),
   validateBody(authSettingsValidators.update),
@@ -71,7 +71,7 @@ router.patch(
  * Delete authentication settings for an app (superadmin only)
  */
 router.delete(
-  '/apps/:appId',
+  "/apps/:appId",
   superAdminMiddleware,
   validateParams(paramValidators.appId),
   deleteAuthSettingsController
@@ -82,10 +82,9 @@ router.delete(
  * Check if a specific auth method is enabled for an app
  */
 router.get(
-  '/apps/:appId/check/:method',
+  "/apps/:appId/check/:method",
   validateParams(paramValidators.authMethod),
   checkAuthMethodController
 );
 
 export default router;
-

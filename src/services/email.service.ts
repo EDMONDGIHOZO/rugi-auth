@@ -1,6 +1,6 @@
-import nodemailer, { Transporter } from 'nodemailer';
-import { env } from '../config/env';
-import { logger } from '../utils/logger';
+import nodemailer, { Transporter } from "nodemailer";
+import { env } from "../config/env";
+import { logger } from "../utils/logger";
 
 let emailTransporter: Transporter | null = null;
 
@@ -10,7 +10,7 @@ let emailTransporter: Transporter | null = null;
  */
 function generateGlobalEmailFooter(): string {
   const companyEmail = env.email.from.email || "support@rugi.app";
-  const companyAddress = "KK 771 St";
+  const companyAddress = "Kigali, Rwanda";
   const appNames = ["Rugi Auth"];
 
   const appsRow = appNames
@@ -175,7 +175,10 @@ export async function sendEmailWithAppConfig(
       "Email sent successfully with app config"
     );
   } catch (error) {
-    logger.error({ error, appId, to, subject }, "Failed to send email with app config");
+    logger.error(
+      { error, appId, to, subject },
+      "Failed to send email with app config"
+    );
     throw error;
   }
 }
@@ -460,4 +463,3 @@ export async function sendUserInviteEmail(params: {
 
   await sendEmail(params.email, subject, htmlContent);
 }
-
