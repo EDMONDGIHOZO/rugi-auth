@@ -940,7 +940,9 @@ program
 program
   .command("init-app")
   .description("Initialize the default application with credentials")
-  .action(() => initApp(false));
+  .action(async () => {
+    await initApp(false);
+  });
 
 program
   .command("create-superadmin")
