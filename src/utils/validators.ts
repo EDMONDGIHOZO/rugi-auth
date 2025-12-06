@@ -266,3 +266,30 @@ export const oauthValidators = {
   }),
 };
 
+/**
+ * Validation schemas for email configuration endpoints
+ */
+export const emailConfigValidators = {
+  create: Joi.object({
+    smtpHost: Joi.string().hostname().required().max(255),
+    smtpPort: Joi.number().integer().min(1).max(65535).required(),
+    smtpSecure: Joi.boolean().optional().default(false),
+    smtpUser: Joi.string().required().max(255),
+    smtpPassword: Joi.string().required(),
+    fromEmail: Joi.string().email().required().max(255),
+    fromName: Joi.string().optional().max(255).default("Rugi Auth"),
+    enabled: Joi.boolean().optional().default(true),
+  }),
+
+  update: Joi.object({
+    smtpHost: Joi.string().hostname().optional().max(255),
+    smtpPort: Joi.number().integer().min(1).max(65535).optional(),
+    smtpSecure: Joi.boolean().optional(),
+    smtpUser: Joi.string().optional().max(255),
+    smtpPassword: Joi.string().optional(),
+    fromEmail: Joi.string().email().optional().max(255),
+    fromName: Joi.string().optional().max(255),
+    enabled: Joi.boolean().optional(),
+  }).min(1),
+};
+

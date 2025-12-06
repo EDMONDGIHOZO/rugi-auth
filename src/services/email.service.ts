@@ -77,7 +77,7 @@ export function isEmailServiceAvailable(): boolean {
 }
 
 /**
- * Send an email using nodemailer
+ * Send an email using nodemailer (global config)
  */
 export async function sendEmail(
   to: string,
@@ -118,6 +118,64 @@ export async function sendEmail(
     );
   } catch (error) {
     logger.error({ error, to, subject }, "Failed to send email");
+    throw error;
+  }
+}
+
+/**
+ * Send an email using app-specific SMTP configuration
+ */
+export async function sendEmailWithAppConfig(
+  appId: string,
+  to: string,
+  subject: string,
+  htmlContent: string,
+  textContent?: string
+): Promise<void> {
+  const { getEmailConfig } = await import("./email-config.service");
+  const config = await getEmailConfig(appId);
+
+  if (!config || !config.enabled) {
+    throw new Error(`Email not configured for app ${appId}`);
+  }
+
+  // Create transporter for this app
+  const appTransporter = nodemailer.createTransport({
+    host: config.smtpHost,
+    port: config.smtpPort,
+    secure: config.smtpSecure,
+    auth: {
+      user: config.smtpUser,
+      pass: config.smtpPassword,
+    },
+  });
+
+  try {
+    const mailOptions = {
+      from: {
+        name: config.fromName,
+        address: config.fromEmail,
+      },
+      to,
+      subject,
+      html: htmlContent,
+      text: textContent || htmlContent.replace(/<[^>]*>/g, ""),
+    };
+
+    const info = await appTransporter.sendMail(mailOptions);
+
+    logger.info(
+      {
+        messageId: info.messageId,
+        appId,
+        to,
+        subject,
+        response: info.response,
+      },
+      "Email sent successfully with app config"
+    );
+  } catch (error) {
+    logger.error({ error, appId, to, subject }, "Failed to send email with app config");
     throw error;
   }
 }

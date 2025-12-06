@@ -58,6 +58,7 @@ model App {
 
   refreshTokens RefreshToken[]
   authSettings  AppAuthSettings?
+  emailConfig   AppEmailConfig?
   roles         Role[]
 
   @@map("apps")
@@ -220,6 +221,33 @@ model AppAuthSettings {
   app App @relation(fields: [appId], references: [id], onDelete: Cascade)
 
   @@map("app_auth_settings")
+  @@index([appId])
+}
+
+model AppEmailConfig {
+  id        String   @id @default(uuid()) @db.Uuid
+  appId     String   @unique @map("app_id") @db.Uuid
+  
+  // SMTP Configuration
+  smtpHost     String  @map("smtp_host") @db.VarChar(255)
+  smtpPort     Int     @map("smtp_port")
+  smtpSecure   Boolean @default(false) @map("smtp_secure")
+  smtpUser     String  @map("smtp_user") @db.VarChar(255)
+  smtpPassword String  @map("smtp_password") @db.Text
+  
+  // From address
+  fromEmail    String  @map("from_email") @db.VarChar(255)
+  fromName     String  @default("Rugi Auth") @map("from_name") @db.VarChar(255)
+  
+  // Enabled flag
+  enabled      Boolean @default(true)
+  
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_email_configs")
   @@index([appId])
 }
 

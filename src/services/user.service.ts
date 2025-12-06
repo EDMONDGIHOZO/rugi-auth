@@ -3,7 +3,7 @@ import { generateSecurePassword, hashPassword } from "./password.service";
 import { findOrCreateRole, isSuperAdmin } from "./role.service";
 import { ConflictError, NotFoundError, AuthError } from "../utils/errors";
 import { AuditAction } from "@prisma/client";
-import { sendUserInviteEmail } from "./email.service";
+import { logger } from "../utils/logger";
 
 export interface InviteUserInput {
   email: string;
@@ -127,20 +127,59 @@ export async function inviteUser(input: InviteUserInput) {
   });
 
   // Send invite / welcome email
-  try {
-    await sendUserInviteEmail({
-      email: user.email,
-      apps: apps.map((app) => ({
-        id: app.id,
-        name: app.name,
-      })),
-      generatedPassword: generatedPassword,
-      isNewUser,
-    });
-  } catch (error) {
-    // Log and rethrow to surface configuration issues
-    console.error("Failed to send user invite email:", error);
-    throw new Error("Failed to send user invite email");
+  // Use the first app's email config (or global if not configured)
+  const firstAppId = app_ids[0];
+  const { isEmailConfigured } = await import("./email-config.service");
+  const { sendEmailWithAppConfig } = await import("./email.service");
+  const { env } = await import("../config/env");
+  
+  const hasAppEmailConfig = await isEmailConfigured(firstAppId);
+  const isDevEnvironment = env.nodeEnv === "development";
+
+  if (hasAppEmailConfig) {
+    try {
+      // Use app-specific email config
+      const htmlContent = (await import("./email.service")).generateUserInviteEmail({
+        email: user.email,
+        apps: apps.map((app) => ({
+          id: app.id,
+          name: app.name,
+        })),
+        generatedPassword: generatedPassword,
+        isNewUser,
+      });
+
+      const subject = isNewUser
+        ? "Welcome to Rugi Auth - Your Account Details"
+        : "You have been granted access to new applications";
+
+      await sendEmailWithAppConfig(
+        firstAppId,
+        user.email,
+        subject,
+        htmlContent
+      );
+    } catch (error) {
+      // In dev, log but don't fail the invite
+      if (isDevEnvironment) {
+        logger.warn({ error, appId: firstAppId }, "Failed to send invite email in dev, continuing anyway");
+      } else {
+        logger.error({ error, appId: firstAppId }, "Failed to send user invite email");
+        throw new Error("Failed to send user invite email");
+      }
+    }
+  } else if (isDevEnvironment) {
+    // In dev, skip email if not configured
+    logger.info(
+      { email: user.email, appIds: app_ids },
+      "Skipping email send in dev environment (email not configured)"
+    );
+  } else {
+    // In production, warn but don't fail
+    logger.warn(
+      { email: user.email, appIds: app_ids },
+      "Email not configured for app, invite email not sent"
+    );
   }
 
   return {
