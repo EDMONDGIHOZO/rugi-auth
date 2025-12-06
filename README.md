@@ -1,29 +1,213 @@
 # Rugi Auth
 
-[![npm version](https://img.shields.io/npm/v/rugi-auth.svg)](https://www.npmjs.com/package/rugi-auth)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org)
+<div align="center">
 
-A production-ready, centralized authentication service that enables multiple applications to share a single user base with app-specific role-based access control.
+[![npm version](https://img.shields.io/npm/v/rugi-auth.svg?style=flat-square)](https://www.npmjs.com/package/rugi-auth)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg?style=flat-square)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg?style=flat-square)](https://www.typescriptlang.org)
 
----
+**A production-ready, centralized authentication service for all your applications.**
 
-## Table of Contents
+[Quick Start](#-quick-start-guide) · [Features](#-features) · [Documentation](#-documentation) · [API Reference](#-api-reference)
 
-- [Features](#features)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Usage in Your App](#usage-in-your-app)
-- [API Reference](#api-reference)
-- [JWT Token Structure](#jwt-token-structure)
-- [Deployment](#deployment)
-- [Security](#security)
-- [License](#license)
+</div>
 
 ---
 
-## Features
+## 📖 Quick Start Guide
+
+Rugi Auth offers flexibility for any setup. Whether you want to spin up a standalone auth server in minutes or integrate authentication into an existing Express app, we've got you covered.
+
+_Estimated completion time: 5-10 minutes_
+
+### Prerequisites
+
+Before getting started, ensure you have:
+
+- **Node.js** `v18` or higher (LTS recommended)
+- **npm**, **yarn**, or **pnpm**
+- **Docker** (for PostgreSQL) or an existing PostgreSQL database
+- **Git** (for version control)
+
+---
+
+## 🚀 Part A: Create a New Project
+
+We'll create a new Rugi Auth project using our CLI tool. This sets up everything you need automatically.
+
+<details>
+<summary><strong>Step 1: Run the installation command</strong></summary>
+
+Open your terminal and run:
+
+```bash
+npx rugi-auth init my-auth-server
+```
+
+You'll be guided through a quick setup process. The CLI will:
+
+- ✅ Create your project structure
+- ✅ Generate RSA keys for JWT signing
+- ✅ Set up your Prisma schema
+- ✅ Install all dependencies
+
+**Output:**
+
+```
+╦═╗╦ ╦╔═╗╦  ╔═╗╦ ╦╔╦╗╦ ╦
+╠╦╝║ ║║ ╦║  ╠═╣║ ║ ║ ╠═╣
+╩╚═╚═╝╚═╝╩  ╩ ╩╚═╝ ╩ ╩ ╩
+
+  Centralized Authentication Service v2.2.0
+
+  Welcome to Rugi Auth! Let's set up your project.
+
+✓ Project structure created
+✓ RSA keys generated
+✓ Prisma schema configured
+✓ Dependencies installed
+
+  ✓ Project created successfully!
+
+  Next steps:
+
+  1. cd my-auth-server
+  2. docker-compose up -d        # Start PostgreSQL
+  3. npm run prisma:migrate      # Run migrations
+  4. npm run setup               # Initialize app + superadmin
+  5. npm run dev                 # Start development server
+```
+
+</details>
+
+<details>
+<summary><strong>Step 2: Start your database</strong></summary>
+
+Navigate to your project and start PostgreSQL:
+
+```bash
+cd my-auth-server
+docker-compose up -d
+```
+
+This starts a PostgreSQL container configured for Rugi Auth.
+
+> **Tip:** If you prefer to use an existing database, update the `DATABASE_URL` in your `.env` file.
+
+</details>
+
+<details>
+<summary><strong>Step 3: Run database migrations</strong></summary>
+
+Apply the database schema:
+
+```bash
+npm run prisma:migrate
+```
+
+When prompted, enter a name for your migration (e.g., `init`).
+
+</details>
+
+<details>
+<summary><strong>Step 4: Complete the setup</strong></summary>
+
+Run the interactive setup wizard:
+
+```bash
+npm run setup
+```
+
+This will:
+1. Generate RSA keys (if not already done)
+2. Create a default application with client credentials
+3. Create your first superadmin account
+
+**Output:**
+
+```
+  📱 App Credentials
+
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  App Name:      Rugi Dashboard
+  Client ID:     rugi-dashboard-dev
+  Client Secret: [your-64-character-secret]
+  Type:          CONFIDENTIAL
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  💾 Save these credentials - the secret won't be shown again!
+```
+
+> ⚠️ **Important:** Save your client credentials securely. You'll need them for API requests.
+
+</details>
+
+<details>
+<summary><strong>Step 5: Start the server</strong></summary>
+
+```bash
+npm run dev
+```
+
+🎉 **Congratulations!** Your Rugi Auth server is now running at:
+
+- **API:** http://localhost:7100
+- **Docs:** http://localhost:7100/docs
+- **JWKS:** http://localhost:7100/.well-known/jwks.json
+
+</details>
+
+---
+
+## 🔧 Part B: Use as a Client Library
+
+If you just want to protect routes in your Express app (without running a full auth server), use the lightweight client:
+
+```bash
+npm install rugi-auth
+```
+
+```typescript
+import express from 'express';
+import {
+  createAuthMiddleware,
+  requireRole,
+  requireAnyRole,
+} from 'rugi-auth/client';
+
+const app = express();
+
+// Create auth middleware pointing to your Rugi Auth server
+const auth = createAuthMiddleware({
+  jwksUri: 'https://auth.yourcompany.com/.well-known/jwks.json',
+  issuer: 'rugi-auth',
+  audience: 'your-client-id', // optional
+});
+
+// Protect routes
+app.get('/profile', auth, (req, res) => {
+  res.json({ userId: req.user.userId, roles: req.user.roles });
+});
+
+// Require specific role
+app.get('/admin', auth, requireRole('admin'), (req, res) => {
+  res.json({ message: 'Welcome, admin!' });
+});
+
+// Require any of multiple roles
+app.get('/dashboard', auth, requireAnyRole('admin', 'manager'), (req, res) => {
+  res.json({ data: '...' });
+});
+
+app.listen(4000);
+```
+
+**The client has only 2 dependencies:** `jsonwebtoken` and `jwks-rsa` — perfect for microservices.
+
+---
+
+## ✨ Features
 
 | Feature | Description |
 |---------|-------------|
@@ -34,165 +218,32 @@ A production-ready, centralized authentication service that enables multiple app
 | 🛡️ **Argon2id Hashing** | Industry-standard password security |
 | 📝 **Audit Logging** | Track all authentication events |
 | ⚡ **Rate Limiting** | Built-in brute force protection |
-| 🌐 **OAuth Support** | Google, GitHub, and more |
+| 🌐 **OAuth Support** | Google, GitHub, and more providers |
+| 📧 **Email OTP** | Passwordless authentication option |
+| 🎨 **Swagger Docs** | Auto-generated API documentation |
 
 ---
 
-## Installation
+## 📚 Documentation
 
-### As an npm Package
-
-```bash
-npm install rugi-auth
-```
-
-**Lightweight client** (only 2 dependencies):
-
-```javascript
-import { createAuthMiddleware } from "rugi-auth/client";
-```
-
-**Full package** (includes all services):
-
-```javascript
-import { authMiddleware } from "rugi-auth";
-```
-
-### As a Standalone Service
-
-```bash
-git clone https://github.com/EDMONDGIHOZO/rugi-auth.git
-cd rugi-auth
-npm install
-```
+| Guide | Description |
+|-------|-------------|
+| [**Integration Guide**](docs/INTEGRATION.md) | Detailed guide for using Rugi Auth in your apps |
+| [**Standalone Setup**](docs/STANDALONE_SETUP.md) | Advanced server configuration and deployment |
 
 ---
 
-## Quick Start
+## 🔌 API Reference
 
-### 1. Setup Environment
-
-```bash
-cp .env.example .env
-```
-
-```env
-DATABASE_URL="postgresql://rugi:rugi_password@localhost:5432/rugi_auth"
-JWT_ISSUER="rugi-auth"
-PORT=7100
-```
-
-### 2. Start Database
-
-```bash
-docker-compose up -d postgres
-```
-
-### 3. Initialize
-
-```bash
-npm run generate:keys      # Generate RSA keys
-npm run prisma:generate    # Generate Prisma client
-npm run prisma:migrate     # Run migrations
-npm run init:app           # Initialize default app
-```
-
-### 4. Run
-
-```bash
-npm run dev                # Development
-npm run start              # Production
-```
-
-🚀 Server running at `http://localhost:7100`
-
----
-
-## Usage in Your App
-
-### Lightweight Client (Recommended)
-
-Import the lightweight client - only **2 dependencies** (`jsonwebtoken`, `jwks-rsa`):
-
-```bash
-npm install rugi-auth
-```
-
-```javascript
-import {
-  createAuthMiddleware,
-  requireRole,
-  requireAnyRole,
-} from "rugi-auth/client";
-
-// Create auth middleware pointing to your auth server
-const auth = createAuthMiddleware({
-  jwksUri: "https://auth.example.com/.well-known/jwks.json",
-  issuer: "rugi-auth",
-  audience: "your-client-id", // optional
-});
-
-// Protect routes
-app.get("/profile", auth, (req, res) => {
-  res.json({ userId: req.user.userId, roles: req.user.roles });
-});
-
-// Require specific role
-app.get("/admin", auth, requireRole("admin"), (req, res) => {
-  res.json({ message: "Welcome, admin!" });
-});
-
-// Require any of multiple roles
-app.get("/dashboard", auth, requireAnyRole("admin", "manager"), (req, res) => {
-  res.json({ data: "..." });
-});
-```
-
-### Full Package Import
-
-Import everything (includes all services for standalone deployment):
-
-```javascript
-import { authMiddleware, roleMiddleware, errorMiddleware } from "rugi-auth";
-
-app.get("/admin", authMiddleware, roleMiddleware("admin"), (req, res) => {
-  res.json({ message: "Welcome, admin!" });
-});
-
-app.use(errorMiddleware);
-```
-
-> ⚠️ Full import includes optional dependencies for database, email, OAuth, etc.
-
-### Available Middleware
-
-| Import | Function | Description |
-|--------|----------|-------------|
-| `rugi-auth/client` | `createAuthMiddleware(opts)` | Creates JWT verification middleware |
-| `rugi-auth/client` | `createOptionalAuthMiddleware(opts)` | Optional auth (doesn't fail) |
-| `rugi-auth/client` | `requireRole(role)` | Requires specific role |
-| `rugi-auth/client` | `requireAnyRole(...roles)` | Requires any of the roles |
-| `rugi-auth/client` | `requireAllRoles(...roles)` | Requires all roles |
-| `rugi-auth` | `authMiddleware` | Built-in auth (uses local keys) |
-| `rugi-auth` | `roleMiddleware(role)` | Role check middleware |
-
-📖 **[Full Integration Guide →](docs/INTEGRATION.md)**
-
-📁 **[Working Examples →](examples/)**
-
----
-
-## API Reference
-
-### Authentication
+### Authentication Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/register` | Register new user |
-| `POST` | `/login` | Login, get tokens |
-| `POST` | `/refresh` | Refresh access token |
-| `POST` | `/revoke` | Revoke refresh token |
-| `GET` | `/me` | Get current user |
+| `POST` | `/register` | Register a new user |
+| `POST` | `/login` | Login and receive tokens |
+| `POST` | `/refresh` | Refresh your access token |
+| `POST` | `/revoke` | Revoke a refresh token |
+| `GET` | `/me` | Get current user info |
 | `GET` | `/.well-known/jwks.json` | Public keys (JWKS) |
 
 ### Example: Login
@@ -200,12 +251,13 @@ app.use(errorMiddleware);
 **Request:**
 
 ```bash
-curl -X POST https://auth.example.com/login \
+curl -X POST http://localhost:7100/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
     "password": "SecurePassword123!",
-    "client_id": "your-app-client-id"
+    "client_id": "rugi-dashboard-dev",
+    "client_secret": "your-client-secret"
   }'
 ```
 
@@ -224,14 +276,15 @@ curl -X POST https://auth.example.com/login \
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/apps` | Register client app |
-| `POST` | `/apps/:id/roles` | Create app role |
-| `POST` | `/users/:id/roles` | Assign user role |
+| `POST` | `/apps` | Register a new client application |
+| `GET` | `/apps` | List all applications |
+| `POST` | `/apps/:id/roles` | Create an app-specific role |
+| `POST` | `/users/:id/roles` | Assign a role to a user |
 | `GET` | `/audit` | View audit logs |
 
 ---
 
-## JWT Token Structure
+## 🔑 JWT Token Structure
 
 Access tokens contain these claims:
 
@@ -253,28 +306,18 @@ Access tokens contain these claims:
 | `aud` | Client ID (audience) |
 | `tid` | App ID (tenant) |
 | `roles` | User's roles for this app |
-| `iss` | Issuer |
+| `iss` | Token issuer |
 | `iat` / `exp` | Issued at / Expires at |
 
 ---
 
-## Deployment
+## 🚢 Deployment
 
-### With PM2 (Recommended)
+### Production with PM2
 
 ```bash
 npm run build
-npm run prisma:generate
 npm run start:pm2
-```
-
-### PM2 Commands
-
-```bash
-npm run start:pm2      # Start
-npm run stop:pm2       # Stop
-npm run restart:pm2    # Restart
-npm run logs:pm2       # View logs
 ```
 
 ### With Docker
@@ -286,7 +329,7 @@ docker-compose up -d
 ### Production Checklist
 
 - [ ] Set `NODE_ENV=production`
-- [ ] Configure `DATABASE_URL` for production database
+- [ ] Configure production `DATABASE_URL`
 - [ ] Generate and secure RSA keys
 - [ ] Set `CORS_ORIGIN` to allowed domains
 - [ ] Use HTTPS (via reverse proxy)
@@ -296,21 +339,21 @@ docker-compose up -d
 
 ---
 
-## Security
+## 🛡️ Security
 
 ### Built-in Protections
 
-- **RS256 JWT** - Asymmetric keys, verify without secret
-- **Argon2id** - Memory-hard password hashing (64MB, time: 3)
-- **Token Rotation** - Refresh tokens invalidated on use
-- **Rate Limiting** - Configurable per-endpoint limits
-- **Helmet.js** - Security headers
-- **Joi Validation** - Input sanitization
-- **Prisma** - SQL injection prevention
+- **RS256 JWT** — Asymmetric keys, verify without sharing secrets
+- **Argon2id** — Memory-hard password hashing (64MB, time: 3)
+- **Token Rotation** — Refresh tokens invalidated on use
+- **Rate Limiting** — Configurable per-endpoint limits
+- **Helmet.js** — Security headers
+- **Joi Validation** — Input sanitization
+- **Prisma** — SQL injection prevention
 
 ### Best Practices
 
-1. Never commit `keys/private.pem`
+1. Never commit `keys/private.pem` to version control
 2. Use different secrets per environment
 3. Rotate client secrets periodically
 4. Always use HTTPS in production
@@ -318,42 +361,81 @@ docker-compose up -d
 
 ---
 
-## Project Structure
+## 🛠️ CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `npx rugi-auth init [name]` | Create a new Rugi Auth project |
+| `npx rugi-auth generate-keys` | Generate RSA key pair |
+| `npx rugi-auth init-app` | Initialize default application |
+| `npx rugi-auth create-superadmin` | Create a superadmin user |
+| `npx rugi-auth setup` | Run complete setup wizard |
+
+---
+
+## 📁 Project Structure
 
 ```
-src/
-├── config/          # Environment, database, keys
-├── controllers/     # Request handlers
-├── middleware/      # Auth, rate limit, validation
-├── routes/          # API routes
-├── services/        # Business logic
-└── utils/           # Logger, errors, validators
+my-auth-server/
+├── src/
+│   └── server.ts         # Server entry point
+├── keys/
+│   ├── private.pem       # JWT signing key (keep secret!)
+│   └── public.pem        # JWT verification key
+├── prisma/
+│   └── schema.prisma     # Database schema
+├── .env                  # Environment configuration
+├── docker-compose.yml    # PostgreSQL container
+└── package.json
 ```
 
 ---
 
-## Scripts
+## 🆘 Troubleshooting
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Development server with hot reload |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run generate:keys` | Generate RSA key pair |
-| `npm run prisma:migrate` | Run database migrations |
-| `npm run prisma:studio` | Open database GUI |
-| `npm run init:app` | Initialize default app with credentials |
+### "Database connection failed"
+
+```bash
+# Ensure PostgreSQL is running
+docker-compose up -d
+
+# Check your DATABASE_URL in .env
+```
+
+### "Invalid token" errors
+
+1. Check that the token hasn't expired
+2. Verify the `issuer` matches (default: `rugi-auth`)
+3. Ensure the `audience` (client_id) matches your app
+4. Confirm the JWKS endpoint is accessible
+
+### "Keys not found"
+
+```bash
+npx rugi-auth generate-keys
+```
 
 ---
 
-## License
+## 📄 License
 
 MIT © [EDMONDGIHOZO](https://github.com/EDMONDGIHOZO)
 
 ---
 
-## Links
+## 🔗 Links
 
-- 📖 [Integration Guide](docs/INTEGRATION.md)
+- 📖 [Full Documentation](docs/INTEGRATION.md)
 - 📁 [Examples](examples/)
-- 🐛 [Report Issue](https://github.com/your-org/rugi-auth/issues)
+- 🐛 [Report an Issue](https://github.com/EDMONDGIHOZO/rugi-auth/issues)
+- 💬 [Discussions](https://github.com/EDMONDGIHOZO/rugi-auth/discussions)
+
+---
+
+<div align="center">
+
+**Made with ❤️ for developers who value security**
+
+[⬆ Back to top](#rugi-auth)
+
+</div>

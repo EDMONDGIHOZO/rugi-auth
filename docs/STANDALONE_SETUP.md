@@ -1,295 +1,509 @@
 # Standalone Server Setup Guide
 
-Quick guide to set up the Rugi Auth server for the first time.
+This guide walks you through deploying Rugi Auth as a **standalone authentication service** for your organization.
 
-> This guide is for deploying rugi-auth as a **standalone authentication service**.
-> If you just want to use rugi-auth in your Express app, see [INTEGRATION.md](./INTEGRATION.md).
-
-## 🚀 First Time Setup
-
-### Step 1: Reset Default App
-
-Creates or resets the default "Rugi Dashboard" app with consistent credentials.
-
-```bash
-npm run dev:reset-app
-```
-
-**Output:**
-
-```
-✅ Credentials reset successfully!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📱 App Name:      Rugi Dashboard
-🆔 Client ID:     rugi-dashboard-dev
-🔑 Client Secret: [64-character secret]
-📋 Type:          CONFIDENTIAL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**Save the client_id and client_secret** - you'll need them for API requests.
+_Estimated completion time: 10-15 minutes_
 
 ---
 
-### Step 2: Create First Superadmin
+## 📋 Table of Contents
 
-Creates the first superadmin user with full system access.
+- [Prerequisites](#-prerequisites)
+- [Option 1: Quick Setup (Recommended)](#-option-1-quick-setup-recommended)
+- [Option 2: Manual Setup](#-option-2-manual-setup)
+- [Configuration](#-configuration)
+- [First Login](#-first-login)
+- [Managing Your Server](#-managing-your-server)
+- [Production Deployment](#-production-deployment)
+- [Troubleshooting](#-troubleshooting)
 
-#### Interactive Mode (Terminal prompts):
+---
+
+## 📦 Prerequisites
+
+Before you begin, ensure you have:
+
+| Requirement | Version | Notes |
+|------------|---------|-------|
+| Node.js | 18+ | LTS version recommended |
+| npm/yarn/pnpm | Latest | Package manager |
+| Docker | Latest | For PostgreSQL (or use existing database) |
+| PostgreSQL | 14+ | If not using Docker |
+
+---
+
+## 🚀 Option 1: Quick Setup (Recommended)
+
+The fastest way to get started. One command creates everything you need.
+
+### Step 1: Create Your Project
 
 ```bash
-npm run dev:create-superadmin
+npx rugi-auth init my-auth-server
 ```
 
-**You'll be prompted for:**
+This command:
+- Creates a new project directory
+- Sets up the folder structure
+- Generates RSA keys for JWT signing
+- Installs all dependencies
+- Configures Prisma schema
 
-- Email address
-- Password (min 8 characters)
-- Password confirmation
-
-#### Non-Interactive Mode (CI/CD or scripts):
+### Step 2: Start the Database
 
 ```bash
-SUPERADMIN_EMAIL=admin@example.com \
-SUPERADMIN_PASSWORD=SecurePassword123! \
-npm run dev:create-superadmin
+cd my-auth-server
+docker-compose up -d
 ```
 
-**Output:**
+Wait a few seconds for PostgreSQL to initialize.
 
+### Step 3: Run Migrations
+
+```bash
+npm run prisma:migrate
 ```
-🎉 Superadmin created successfully!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📧 Email:    admin@example.com
-🆔 User ID:  [user-uuid]
-📱 App:      Rugi Dashboard
-👑 Roles:    superadmin, owner
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Enter a migration name when prompted (e.g., `init`).
+
+### Step 4: Complete Setup
+
+Run the interactive setup wizard:
+
+```bash
+npm run setup
+```
+
+You'll be guided to:
+1. Create the default application (with client credentials)
+2. Create your first superadmin account
+
+**Save the credentials displayed!** You'll need them for API requests.
+
+### Step 5: Start Your Server
+
+```bash
+npm run dev
+```
+
+🎉 **Your server is running!**
+
+- **API:** http://localhost:7100
+- **Swagger Docs:** http://localhost:7100/docs
+- **JWKS Endpoint:** http://localhost:7100/.well-known/jwks.json
+
+---
+
+## 🔧 Option 2: Manual Setup
+
+For more control over the setup process, follow these steps:
+
+### Step 1: Create Project Structure
+
+```bash
+mkdir my-auth-server && cd my-auth-server
+npm init -y
+npm install rugi-auth dotenv
+npm install -D typescript tsx @types/node prisma
+```
+
+### Step 2: Create Server Entry Point
+
+Create `src/server.ts`:
+
+```typescript
+import 'dotenv/config';
+import { app } from 'rugi-auth';
+
+const PORT = process.env.PORT || 7100;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Rugi Auth running on http://localhost:${PORT}`);
+});
+```
+
+### Step 3: Configure Environment
+
+Create `.env`:
+
+```env
+# Database
+DATABASE_URL="postgresql://rugi:rugi_password@localhost:5432/rugi_auth"
+
+# Server
+PORT=7100
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000,http://localhost:5173
+
+# JWT
+JWT_ISSUER="rugi-auth"
+JWT_ACCESS_TOKEN_EXPIRY="7d"
+JWT_REFRESH_TOKEN_EXPIRY="30d"
+
+# Keys
+PRIVATE_KEY_PATH="./keys/private.pem"
+PUBLIC_KEY_PATH="./keys/public.pem"
+```
+
+### Step 4: Generate RSA Keys
+
+```bash
+npx rugi-auth generate-keys
+```
+
+### Step 5: Setup Database
+
+Create `docker-compose.yml`:
+
+```yaml
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: rugi
+      POSTGRES_PASSWORD: rugi_password
+      POSTGRES_DB: rugi_auth
+    ports:
+      - "5432:5432"
+    volumes:
+      - rugi_auth_data:/var/lib/postgresql/data
+
+volumes:
+  rugi_auth_data:
+```
+
+Start the database:
+
+```bash
+docker-compose up -d
+```
+
+### Step 6: Initialize Prisma
+
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+```
+
+### Step 7: Initialize Application
+
+```bash
+npx rugi-auth init-app
+```
+
+Save the displayed client credentials!
+
+### Step 8: Create Superadmin
+
+```bash
+npx rugi-auth create-superadmin
+```
+
+Follow the prompts to create your admin account.
+
+### Step 9: Start Server
+
+Add scripts to `package.json`:
+
+```json
+{
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  }
+}
+```
+
+Start the server:
+
+```bash
+npm run dev
 ```
 
 ---
 
-## 🎯 What Happens
+## ⚙️ Configuration
 
-### Default App Creation
+### Environment Variables
 
-- **App Name:** `Rugi Dashboard`
-- **Client ID:** `rugi-dashboard-dev` (consistent)
-- **Type:** `CONFIDENTIAL`
-- **Redirect URIs:**
-  - `http://localhost:7100/callback`
-  - `http://localhost:3001/callback`
-  - `http://localhost:5173/callback`
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | Required |
+| `PORT` | Server port | `7100` |
+| `NODE_ENV` | Environment mode | `development` |
+| `CORS_ORIGIN` | Allowed origins (comma-separated) | `*` |
+| `JWT_ISSUER` | Token issuer name | `rugi-auth` |
+| `JWT_ACCESS_TOKEN_EXPIRY` | Access token lifetime | `7d` |
+| `JWT_REFRESH_TOKEN_EXPIRY` | Refresh token lifetime | `30d` |
+| `PRIVATE_KEY_PATH` | Path to RSA private key | `./keys/private.pem` |
+| `PUBLIC_KEY_PATH` | Path to RSA public key | `./keys/public.pem` |
 
-### Superadmin User Creation
+### Email Configuration (Optional)
 
-The first superadmin user gets:
+For password resets and OTP authentication:
 
-1. ✅ **Email verified** automatically
-2. ✅ **Opted into** the default app
-3. ✅ **Two roles:**
-   - `superadmin` - For system-wide management
-   - `owner` - For app ownership
-
-**Roles created if not exist:**
-
-- `superadmin` role for the default app
-- `owner` role for the default app
+```env
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-email@example.com
+SMTP_PASS=your-password
+EMAIL_FROM="Rugi Auth <noreply@example.com>"
+```
 
 ---
 
 ## 🔐 First Login
 
-After setup, test your login:
+Test your setup with a login request:
 
 ```bash
 curl -X POST http://localhost:7100/login \
   -H 'Content-Type: application/json' \
   -d '{
-    "email": "admin@example.com",
+    "email": "your-admin@example.com",
     "password": "your-password",
     "client_id": "rugi-dashboard-dev",
     "client_secret": "your-64-char-secret"
   }'
 ```
 
-**Response:**
+**Successful Response:**
 
 ```json
 {
-  "access_token": "jwt-token...",
-  "refresh_token": "uuid...",
+  "access_token": "eyJhbGciOiJSUzI1NiIs...",
+  "refresh_token": "550e8400-e29b-41d4-a716-446655440000",
   "token_type": "Bearer",
   "expires_in": 604800
 }
 ```
 
----
-
-## 🔄 Creating Additional Superadmins
-
-If you already have a superadmin and want to create another:
-
-### Interactive Mode:
+### Verify Your Token
 
 ```bash
-npm run dev:create-superadmin
-# Will prompt: "Do you want to create another superadmin? (yes/no)"
+# Get user info
+curl http://localhost:7100/me \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
-### Non-Interactive Mode:
+### Test Admin Access
 
 ```bash
-FORCE_CREATE=true \
-SUPERADMIN_EMAIL=admin2@example.com \
-SUPERADMIN_PASSWORD=Password123! \
-npm run dev:create-superadmin
-```
-
----
-
-## ⚙️ Quick Setup Script
-
-Create a setup script for your team:
-
-```bash
-#!/bin/bash
-# setup.sh
-
-echo "🚀 Setting up Rugi Auth..."
-
-# Step 1: Reset app
-echo "Step 1: Creating default app..."
-npm run dev:reset-app
-
-# Step 2: Create superadmin
-echo "Step 2: Creating superadmin..."
-SUPERADMIN_EMAIL=${ADMIN_EMAIL:-admin@rugi.app} \
-SUPERADMIN_PASSWORD=${ADMIN_PASSWORD:-Admin123!} \
-npm run dev:create-superadmin
-
-echo "✅ Setup complete!"
-```
-
-**Usage:**
-
-```bash
-chmod +x setup.sh
-./setup.sh
-```
-
-Or with custom credentials:
-
-```bash
-ADMIN_EMAIL=me@example.com ADMIN_PASSWORD=MyPassword! ./setup.sh
-```
-
----
-
-## 🧪 Testing Superadmin Access
-
-### 1. Login
-
-```bash
-curl -X POST http://localhost:7100/login \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "email": "admin@rugi.app",
-    "password": "Admin123!",
-    "client_id": "rugi-dashboard-dev",
-    "client_secret": "your-secret"
-  }'
-```
-
-### 2. Test Superadmin Endpoints
-
-```bash
-# List all users
+# List all users (superadmin only)
 curl http://localhost:7100/users \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 
 # List all apps
 curl http://localhost:7100/apps \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
-
-# Manage auth settings (superadmin only)
-curl http://localhost:7100/auth-settings \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
 ---
 
-## 📋 Checklist
+## 🛠️ Managing Your Server
 
-- [ ] Run `npm run dev:reset-app`
-- [ ] Save client_id and client_secret
-- [ ] Run `npm run dev:create-superadmin`
-- [ ] Test login with superadmin credentials
-- [ ] Verify superadmin has access to protected endpoints
+### CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server with hot reload |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npx rugi-auth generate-keys` | Generate new RSA keys |
+| `npx rugi-auth init-app` | Reset/create default app credentials |
+| `npx rugi-auth create-superadmin` | Create another superadmin |
+| `npm run prisma:studio` | Open database GUI |
+
+### Prisma Commands
+
+```bash
+# Open database GUI
+npm run prisma:studio
+
+# Create a new migration
+npx prisma migrate dev --name your_migration_name
+
+# Reset database (WARNING: deletes all data)
+npx prisma migrate reset
+```
+
+### Creating Additional Apps
+
+```bash
+curl -X POST http://localhost:7100/apps \
+  -H 'Authorization: Bearer YOUR_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "My New App",
+    "type": "CONFIDENTIAL",
+    "redirect_uris": ["http://localhost:4000/callback"]
+  }'
+```
 
 ---
 
-## ⚠️ Important Notes
+## 🚢 Production Deployment
 
-### Security
+### With PM2 (Recommended)
 
-- **Superadmin** has full system access - protect these credentials!
-- Change default passwords in production
-- Use strong passwords (min 8 chars, mix of upper/lower/numbers/symbols)
+```bash
+# Build the project
+npm run build
 
-### Roles Created
+# Start with PM2
+npm install -g pm2
+pm2 start dist/server.js --name rugi-auth
 
-- `superadmin` - System-wide management
-- `owner` - App ownership and management
+# Save PM2 config
+pm2 save
+pm2 startup
+```
 
-Both roles grant access to superadmin-only endpoints.
+### PM2 Ecosystem File
 
-### Environment
+Create `ecosystem.config.js`:
 
-- These commands are for **development** only
-- In production, create superadmins through a secure process
-- Never commit credentials to git
+```javascript
+module.exports = {
+  apps: [{
+    name: 'rugi-auth',
+    script: 'dist/server.js',
+    instances: 'max',
+    exec_mode: 'cluster',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 7100
+    }
+  }]
+};
+```
+
+### With Docker
+
+Create `Dockerfile`:
+
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY dist ./dist
+COPY prisma ./prisma
+COPY keys ./keys
+
+RUN npx prisma generate
+
+EXPOSE 7100
+
+CMD ["node", "dist/server.js"]
+```
+
+Build and run:
+
+```bash
+docker build -t rugi-auth .
+docker run -d -p 7100:7100 --env-file .env rugi-auth
+```
+
+### Production Checklist
+
+- [ ] Set `NODE_ENV=production`
+- [ ] Use a production PostgreSQL database
+- [ ] Configure `CORS_ORIGIN` to specific domains
+- [ ] Set up HTTPS (via nginx/Caddy)
+- [ ] Configure log rotation
+- [ ] Set up database backups
+- [ ] Enable monitoring (PM2, Prometheus, etc.)
+- [ ] Review rate limit settings
+- [ ] Secure your RSA private key
 
 ---
 
 ## 🆘 Troubleshooting
 
+### "Database connection failed"
+
+```bash
+# Check if PostgreSQL is running
+docker-compose ps
+
+# Restart the database
+docker-compose restart postgres
+
+# Check connection string in .env
+echo $DATABASE_URL
+```
+
+### "Keys not found"
+
+```bash
+# Generate new keys
+npx rugi-auth generate-keys
+
+# Verify keys exist
+ls -la keys/
+```
+
 ### "Default app not found"
 
 ```bash
-# Run this first:
-npm run dev:reset-app
-```
-
-### "User with this email already exists"
-
-```bash
-# Use a different email or delete the existing user
+# Initialize the default app
+npx rugi-auth init-app
 ```
 
 ### "Superadmin already exists"
 
-**Interactive:** Answer "yes" to create another
-**Non-interactive:** Add `FORCE_CREATE=true`
+The create-superadmin command will prompt you to confirm if a superadmin already exists. Answer "yes" to create another.
 
-### Want to start fresh?
+For non-interactive mode:
 
 ```bash
-# Reset everything (WARNING: deletes all data)
+FORCE_CREATE=true \
+SUPERADMIN_EMAIL=new-admin@example.com \
+SUPERADMIN_PASSWORD=SecurePass123! \
+npx rugi-auth create-superadmin
+```
+
+### Reset Everything
+
+```bash
+# WARNING: This deletes all data!
 npx prisma migrate reset
-npm run dev:reset-app
-npm run dev:create-superadmin
+npm run setup
 ```
 
 ---
 
-## 🎉 You're Ready!
+## 📊 What Gets Created
 
-Your system now has:
+After setup, your system has:
 
-- ✅ Default app with known credentials
-- ✅ Superadmin user with full access
-- ✅ Superadmin and owner roles
-- ✅ Ready for dashboard development
+| Component | Description |
+|-----------|-------------|
+| **Default App** | "Rugi Dashboard" with known client credentials |
+| **Superadmin User** | Full system access with `superadmin` and `owner` roles |
+| **RSA Keys** | 2048-bit key pair for JWT signing |
+| **Database** | PostgreSQL with all auth tables |
 
-Start building! 🚀
+---
+
+## 🎉 Next Steps
+
+1. **Register Your Apps** — Create client credentials for each of your applications
+2. **Set Up Roles** — Define app-specific roles for authorization
+3. **Integrate** — Use the [Integration Guide](./INTEGRATION.md) to connect your apps
+4. **Deploy** — Follow the production deployment steps above
+
+---
+
+<div align="center">
+
+**Need help?** [Open an Issue](https://github.com/EDMONDGIHOZO/rugi-auth/issues) · [Discussions](https://github.com/EDMONDGIHOZO/rugi-auth/discussions)
+
+</div>
