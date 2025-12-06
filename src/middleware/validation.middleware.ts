@@ -55,9 +55,9 @@ export function validateParams(schema: Joi.ObjectSchema) {
  */
 export function validateQuery(schema: Joi.ObjectSchema) {
   return (req: Request, _res: Response, next: NextFunction) => {
-    const { error, value } = schema.validate(req.query, {
+    const { error } = schema.validate(req.query, {
       abortEarly: false,
-      stripUnknown: true,
+      stripUnknown: false, // Don't strip unknown to avoid mutating read-only req.query
     });
 
     if (error) {
@@ -69,7 +69,9 @@ export function validateQuery(schema: Joi.ObjectSchema) {
       throw new ValidationError('Invalid query parameters', details);
     }
 
-    req.query = value;
+    // Note: req.query is read-only in Express, so we can't reassign it
+    // The validation ensures the query params are valid, which is sufficient
+    // Controllers can continue using req.query directly
     next();
   };
 }
