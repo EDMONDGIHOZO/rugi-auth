@@ -738,34 +738,52 @@ async function createSuperadmin() {
 
   console.log(chalk.bold("  Create your first superadmin account\n"));
 
-  const response = await prompts([
-    {
-      type: "text",
-      name: "email",
-      message: "Email address",
-      validate: (value) =>
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || "Enter a valid email address",
-    },
-    {
-      type: "password",
-      name: "password",
-      message: "Password (min 8 characters)",
-      validate: (value) =>
-        value.length >= 8 || "Password must be at least 8 characters",
-    },
-    {
-      type: "password",
-      name: "confirmPassword",
-      message: "Confirm password",
-      validate: (value, values) =>
-        value === values.password || "Passwords do not match",
-    },
-  ]);
+  // Get email
+  const emailResponse = await prompts({
+    type: "text",
+    name: "email",
+    message: "Email address",
+    validate: (value) =>
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || "Enter a valid email address",
+  });
 
-  if (!response.email || !response.password) {
+  if (!emailResponse.email) {
     console.log(chalk.red("\n✖ Superadmin creation cancelled.\n"));
     process.exit(1);
   }
+
+  // Get password
+  const passwordResponse = await prompts({
+    type: "password",
+    name: "password",
+    message: "Password (min 8 characters)",
+    validate: (value) =>
+      value.length >= 8 || "Password must be at least 8 characters",
+  });
+
+  if (!passwordResponse.password) {
+    console.log(chalk.red("\n✖ Superadmin creation cancelled.\n"));
+    process.exit(1);
+  }
+
+  // Confirm password
+  const confirmResponse = await prompts({
+    type: "password",
+    name: "confirmPassword",
+    message: "Confirm password",
+    validate: (value) =>
+      value === passwordResponse.password || "Passwords do not match",
+  });
+
+  if (!confirmResponse.confirmPassword) {
+    console.log(chalk.red("\n✖ Superadmin creation cancelled.\n"));
+    process.exit(1);
+  }
+
+  const response = {
+    email: emailResponse.email,
+    password: passwordResponse.password,
+  };
 
   const spinner = ora("Creating superadmin...").start();
 
