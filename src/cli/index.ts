@@ -936,6 +936,100 @@ async function runSetup() {
   console.log();
 }
 
+async function updateDashboard() {
+  printBanner();
+
+  const dashboardPath = path.join(process.cwd(), "dashboard");
+
+  if (!fs.existsSync(dashboardPath)) {
+    console.log(chalk.red("\n✖ Dashboard not found in current directory.\n"));
+    console.log(chalk.gray("  Run 'npx rugi-auth init' with dashboard option first.\n"));
+    process.exit(1);
+  }
+
+  console.log(chalk.bold("  Updating admin dashboard...\n"));
+
+  const spinner = ora("Checking dashboard status...").start();
+
+  try {
+    // Check if it's a git repository
+    const gitPath = path.join(dashboardPath, ".git");
+    if (!fs.existsSync(gitPath)) {
+      spinner.fail("Dashboard is not a git repository");
+      console.log(chalk.yellow("\n  Dashboard was not cloned from git. Re-cloning...\n"));
+      
+      // Backup .env if it exists
+      const envPath = path.join(dashboardPath, ".env");
+      let savedEnv = "";
+      if (fs.existsSync(envPath)) {
+        savedEnv = fs.readFileSync(envPath, "utf-8");
+        console.log(chalk.gray("  ✓ Backed up .env file\n"));
+      }
+
+      // Remove old dashboard
+      spinner.start("Removing old dashboard...");
+      fs.rmSync(dashboardPath, { recursive: true, force: true });
+      spinner.succeed("Old dashboard removed");
+
+      // Clone fresh
+      spinner.start("Cloning latest dashboard...");
+      execSync(`git clone --depth 1 ${DASHBOARD_REPO} dashboard`, {
+        cwd: process.cwd(),
+        stdio: "pipe",
+      });
+      // Remove .git from cloned dashboard
+      fs.rmSync(path.join(dashboardPath, ".git"), { recursive: true, force: true });
+      spinner.succeed("Latest dashboard cloned");
+
+      // Restore .env if it existed
+      if (savedEnv) {
+        fs.writeFileSync(envPath, savedEnv);
+        console.log(chalk.gray("  ✓ Restored .env file\n"));
+      }
+
+      // Install dependencies
+      spinner.start("Installing dashboard dependencies...");
+      execSync("npm install", { cwd: dashboardPath, stdio: "pipe" });
+      spinner.succeed("Dashboard dependencies installed");
+
+      console.log(chalk.green.bold("\n  ✓ Dashboard updated successfully!\n"));
+      return;
+    }
+
+    // It's a git repo, try to pull updates
+    spinner.start("Fetching latest changes...");
+    
+    // Stash any local changes
+    try {
+      execSync("git stash", { cwd: dashboardPath, stdio: "pipe" });
+    } catch {
+      // No changes to stash, that's fine
+    }
+
+    // Fetch and pull
+    execSync("git fetch origin", { cwd: dashboardPath, stdio: "pipe" });
+    execSync("git pull origin main", { cwd: dashboardPath, stdio: "pipe" });
+    
+    spinner.succeed("Dashboard updated from git");
+
+    // Install dependencies in case package.json changed
+    spinner.start("Updating dependencies...");
+    execSync("npm install", { cwd: dashboardPath, stdio: "pipe" });
+    spinner.succeed("Dependencies updated");
+
+    console.log(chalk.green.bold("\n  ✓ Dashboard updated successfully!\n"));
+    console.log(chalk.gray("  Restart your dashboard with: npm run dashboard:dev\n"));
+  } catch (error: any) {
+    spinner.fail("Failed to update dashboard");
+    console.error(chalk.red(`\nError: ${error.message}\n`));
+    console.log(chalk.yellow("  You may need to manually update the dashboard:\n"));
+    console.log(chalk.cyan(`  cd dashboard`));
+    console.log(chalk.cyan(`  git pull origin main`));
+    console.log(chalk.cyan(`  npm install\n`));
+    process.exit(1);
+  }
+}
+
 // ============================================================
 // CLI Program Definition
 // ============================================================
@@ -971,6 +1065,11 @@ program
   .command("setup")
   .description("Run complete setup (keys + app + superadmin)")
   .action(runSetup);
+
+program
+  .command("update-dashboard")
+  .description("Update the admin dashboard to the latest version")
+  .action(updateDashboard);
 
 program.parse();
 

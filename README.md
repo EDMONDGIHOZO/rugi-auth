@@ -239,6 +239,23 @@ Rugi Auth comes with an optional admin dashboard for managing your authenticatio
 
 The dashboard is automatically configured during setup with your app credentials — just log in with your superadmin account!
 
+### Updating the Dashboard
+
+When the dashboard receives updates, you can easily update your local copy:
+
+```bash
+# From your project root
+npx rugi-auth update-dashboard
+```
+
+This command will:
+- ✅ Pull the latest changes from GitHub
+- ✅ Preserve your `.env` configuration
+- ✅ Update dependencies automatically
+- ✅ Handle merge conflicts gracefully
+
+**Note:** If you've made custom changes to the dashboard, they may be overwritten. Consider forking the dashboard repo if you need customizations.
+
 ---
 
 ## ✨ Features
@@ -405,6 +422,7 @@ docker-compose up -d
 | `npx rugi-auth init-app` | Initialize default application |
 | `npx rugi-auth create-superadmin` | Create a superadmin user |
 | `npx rugi-auth setup` | Run complete setup wizard |
+| `npx rugi-auth update-dashboard` | Update admin dashboard to latest version |
 
 ### Project Scripts (after init)
 
