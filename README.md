@@ -34,7 +34,7 @@ Before getting started, ensure you have:
 
 ## 🚀 Part A: Create a New Project
 
-We'll create a new Rugi Auth project using our CLI tool. This sets up everything you need automatically.
+We'll create a new Rugi Auth project using our CLI tool. This sets up everything you need automatically — including an optional admin dashboard!
 
 <details>
 <summary><strong>Step 1: Run the installation command</strong></summary>
@@ -45,14 +45,7 @@ Open your terminal and run:
 npx rugi-auth init my-auth-server
 ```
 
-You'll be guided through a quick setup process. The CLI will:
-
-- ✅ Create your project structure
-- ✅ Generate RSA keys for JWT signing
-- ✅ Set up your Prisma schema
-- ✅ Install all dependencies
-
-**Output:**
+You'll be guided through a quick setup process:
 
 ```
 ╦═╗╦ ╦╔═╗╦  ╔═╗╦ ╦╔╦╗╦ ╦
@@ -63,10 +56,28 @@ You'll be guided through a quick setup process. The CLI will:
 
   Welcome to Rugi Auth! Let's set up your project.
 
+? What is your project name? my-auth-server
+? Include admin dashboard? (React frontend for managing users, apps, roles) Yes
+```
+
+The CLI will:
+
+- ✅ Create your project structure
+- ✅ Generate RSA keys for JWT signing
+- ✅ Set up your Prisma schema
+- ✅ Install backend dependencies
+- ✅ Clone and configure the admin dashboard (optional)
+- ✅ Auto-configure dashboard with your credentials
+
+**Output:**
+
+```
 ✓ Project structure created
 ✓ RSA keys generated
 ✓ Prisma schema configured
-✓ Dependencies installed
+✓ Backend dependencies installed
+✓ Admin dashboard cloned
+✓ Dashboard dependencies installed
 
   ✓ Project created successfully!
 
@@ -76,7 +87,10 @@ You'll be guided through a quick setup process. The CLI will:
   2. docker-compose up -d        # Start PostgreSQL
   3. npm run prisma:migrate      # Run migrations
   4. npm run setup               # Initialize app + superadmin
-  5. npm run dev                 # Start development server
+  5. npm run dev:all             # Start backend + dashboard
+
+  Backend:   http://localhost:7100
+  Dashboard: http://localhost:5173
 ```
 
 </details>
@@ -207,6 +221,26 @@ app.listen(4000);
 
 ---
 
+## 🖥️ Admin Dashboard
+
+Rugi Auth comes with an optional admin dashboard for managing your authentication service visually.
+
+<div align="center">
+
+| Feature | Description |
+|---------|-------------|
+| 👥 **User Management** | List, invite, and manage users |
+| 📱 **App Management** | Create and configure client applications |
+| 🎭 **Role Management** | Define app-specific roles and assign them |
+| 📊 **Audit Logs** | View all authentication events |
+| ⚙️ **Auth Settings** | Configure OAuth providers, email settings |
+
+</div>
+
+The dashboard is automatically configured during setup with your app credentials — just log in with your superadmin account!
+
+---
+
 ## ✨ Features
 
 | Feature | Description |
@@ -221,6 +255,7 @@ app.listen(4000);
 | 🌐 **OAuth Support** | Google, GitHub, and more providers |
 | 📧 **Email OTP** | Passwordless authentication option |
 | 🎨 **Swagger Docs** | Auto-generated API documentation |
+| 🖥️ **Admin Dashboard** | React frontend for visual management |
 
 ---
 
@@ -365,11 +400,22 @@ docker-compose up -d
 
 | Command | Description |
 |---------|-------------|
-| `npx rugi-auth init [name]` | Create a new Rugi Auth project |
+| `npx rugi-auth init [name]` | Create a new Rugi Auth project (with optional dashboard) |
 | `npx rugi-auth generate-keys` | Generate RSA key pair |
 | `npx rugi-auth init-app` | Initialize default application |
 | `npx rugi-auth create-superadmin` | Create a superadmin user |
 | `npx rugi-auth setup` | Run complete setup wizard |
+
+### Project Scripts (after init)
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start backend server |
+| `npm run dev:all` | Start backend + dashboard together |
+| `npm run dashboard:dev` | Start dashboard only |
+| `npm run setup` | Initialize app + create superadmin |
+| `npm run prisma:migrate` | Run database migrations |
+| `npm run prisma:studio` | Open database GUI |
 
 ---
 
@@ -379,12 +425,18 @@ docker-compose up -d
 my-auth-server/
 ├── src/
 │   └── server.ts         # Server entry point
+├── dashboard/            # Admin dashboard (optional)
+│   ├── src/
+│   │   ├── pages/        # Dashboard pages
+│   │   ├── components/   # UI components
+│   │   └── lib/          # API client
+│   └── .env              # Dashboard config (auto-generated)
 ├── keys/
 │   ├── private.pem       # JWT signing key (keep secret!)
 │   └── public.pem        # JWT verification key
 ├── prisma/
 │   └── schema.prisma     # Database schema
-├── .env                  # Environment configuration
+├── .env                  # Backend configuration
 ├── docker-compose.yml    # PostgreSQL container
 └── package.json
 ```
