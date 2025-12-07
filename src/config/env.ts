@@ -30,6 +30,13 @@ const envSchema = Joi.object({
   PASSWORD_RESET_TOKEN_EXPIRY: Joi.string().default("1h"),
   OTP_EXPIRY: Joi.string().default("10m"),
   OTP_LENGTH: Joi.number().integer().min(4).max(8).default(6),
+  // Redis Configuration (Auto-configured with Docker on port 6380)
+  REDIS_HOST: Joi.string().default("localhost"),
+  REDIS_PORT: Joi.number().port().default(6380),
+  REDIS_PASSWORD: Joi.string().optional().allow(''),
+  // Trust proxy setting for Express (required when behind reverse proxy/load balancer)
+  // Set to "1" for single proxy, "true" for all, or specific IP/subnet
+  TRUST_PROXY: Joi.string().optional(),
 }).unknown();
 
 const { error, value } = envSchema.validate(process.env);
@@ -80,5 +87,10 @@ export const env = {
     expiry: value.OTP_EXPIRY,
     length: value.OTP_LENGTH,
   },
+    redis: {
+        host: value.REDIS_HOST,
+        port: value.REDIS_PORT,
+        password: value.REDIS_PASSWORD,
+    },
 } as const;
 

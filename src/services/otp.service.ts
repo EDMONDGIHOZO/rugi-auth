@@ -120,32 +120,25 @@ export async function verifyOTPAndLogin(
     throw new AuthError('Invalid credentials');
   }
 
-  // Find OTP
-  const otp = await prisma.emailOTP.findFirst({
+    // Atomic update: Verify AND mark as used in one operation
+    // This prevents race conditions (TOCTOU) where two requests could verify the same OTP simultaneously
+    const result = await prisma.emailOTP.updateMany({
     where: {
       userId: user.id,
       code,
       used: false,
-    },
-    orderBy: {
-      createdAt: 'desc',
+          expiresAt: {
+              gt: new Date(), // Check expiry DB-side
+          },
+      },
+      data: {
+          used: true,
     },
   });
 
-  if (!otp) {
+    if (result.count === 0) {
     throw new AuthError('Invalid or expired OTP code');
   }
-
-  // Check if expired
-  if (otp.expiresAt < new Date()) {
-    throw new AuthError('OTP code has expired');
-  }
-
-  // Mark OTP as used
-  await prisma.emailOTP.update({
-    where: { id: otp.id },
-    data: { used: true },
-  });
 
   // Verify client credentials
   const app = await verifyClientCredentials(client_id, client_secret);

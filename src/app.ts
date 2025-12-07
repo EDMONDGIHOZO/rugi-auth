@@ -14,6 +14,15 @@ import { swaggerDocument } from "./config/swagger";
 
 const app = express();
 
+// Trust proxy - Required for req.ip to work correctly behind reverse proxy/load balancer
+// Set TRUST_PROXY env var to configure (e.g., "1" for single proxy, "true" for all, or specific IPs)
+// Defaults to false in development, true in production
+if (env.nodeEnv === 'production') {
+  app.set('trust proxy', true);
+} else if (process.env.TRUST_PROXY) {
+  app.set('trust proxy', process.env.TRUST_PROXY);
+}
+
 // Security middleware
 app.use(helmet());
 

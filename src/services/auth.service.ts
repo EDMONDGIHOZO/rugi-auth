@@ -129,18 +129,33 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
     where: { email: input.email },
   });
 
+  // DUMMY_HASH for timing attack mitigation (pre-computed valid hash)
+  // Always perform dummy verification to ensure constant-time execution
+  const DUMMY_HASH = '$argon2id$v=19$m=65536,t=3,p=4$S51URudZlBxZFrGRxxts+Q$ODb+T3rUpbe6Gg2caeCvrCvSbr4sJF/nH9XUY+HIeeY';
+  const DUMMY_PASSWORD = 'dummy_password_for_timing_attack_mitigation';
+
+  // Always perform dummy verification first to consume time (prevents timing attacks)
+  // Then perform real verification if user exists
+  const [dummyResult, realResult] = await Promise.all([
+    verifyPassword(DUMMY_HASH, DUMMY_PASSWORD), // Always fails, but takes time
+    user && user.passwordHash 
+      ? verifyPassword(user.passwordHash, input.password)
+      : verifyPassword(DUMMY_HASH, DUMMY_PASSWORD), // If no user/password, do dummy verification to maintain timing
+  ]);
+
+  // Check if user exists
   if (!user) {
-    // Don't reveal if user exists
     throw new AuthError('Invalid credentials');
   }
 
-  // Verify password
+  // Check if user has password hash
   if (!user.passwordHash) {
     throw new AuthError('Invalid credentials');
   }
-  
-  const isValid = await verifyPassword(user.passwordHash, input.password);
-  if (!isValid) {
+
+  // Check if password is valid
+  // Note: realResult will be true only if user exists, has password, and password matches
+  if (!realResult) {
     throw new AuthError('Invalid credentials');
   }
 

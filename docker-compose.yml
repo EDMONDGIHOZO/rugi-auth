@@ -21,6 +21,17 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    # For production: Add password protection
+    # command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    # For development: No password (default)
+    command: redis-server --appendonly yes
+
   # Optional: Node.js development service
   # Uncomment if you want to run the app in Docker
   # app:
@@ -44,4 +55,5 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
 

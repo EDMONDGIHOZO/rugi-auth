@@ -5,6 +5,7 @@ import app from './app';
 import { env } from './config/env';
 import { logger } from './utils/logger';
 import { initializeEmailClient } from './services/email.service';
+import { closeRedisConnection } from './middleware/rateLimit.middleware';
 
 // Initialize email service
 try {
@@ -24,19 +25,24 @@ const server = app.listen(env.port, () => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  server.close(() => {
+async function gracefulShutdown(signal: string) {
+  logger.info(`${signal} received, shutting down gracefully`);
+  
+  // Close HTTP server
+  server.close(async () => {
+    // Close Redis connection
+    await closeRedisConnection();
     logger.info('Process terminated');
     process.exit(0);
   });
-});
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  server.close(() => {
-    logger.info('Process terminated');
-    process.exit(0);
-  });
-});
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    logger.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
