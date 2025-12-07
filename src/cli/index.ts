@@ -64,29 +64,75 @@ PUBLIC_KEY_PATH="./keys/public.pem"
 # EMAIL_FROM="Rugi Auth <noreply@example.com>"
 `;
 
-const DOCKER_COMPOSE_TEMPLATE = `version: "3.8"
+function getDockerComposeTemplate(projectName: string): string {
+  // Sanitize project name for use in container names (lowercase, hyphens only)
+  const sanitizedName = projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  const dbContainerName = `${sanitizedName}-db`;
+  const redisContainerName = `${sanitizedName}-redis`;
+  const postgresVolume = `${sanitizedName}_postgres_data`;
+  const redisVolume = `${sanitizedName}_redis_data`;
+  
+  return `version: "3.8"
 
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: rugi-auth-db
+    container_name: ${dbContainerName}
     environment:
-      POSTGRES_USER: rugi
-      POSTGRES_PASSWORD: rugi_password
-      POSTGRES_DB: rugi_auth
+      POSTGRES_USER: \${POSTGRES_USER:-rugi}
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:-rugi_password}
+      POSTGRES_DB: \${POSTGRES_DB:-rugi_auth}
+      # These ensure the database and user are created even if not in .env
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
     ports:
       - "5432:5432"
     volumes:
-      - rugi_auth_data:/var/lib/postgresql/data
+      - ${postgresVolume}:/var/lib/postgresql/data
+      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rugi -d rugi_auth"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U \${POSTGRES_USER:-rugi} -d \${POSTGRES_DB:-rugi_auth}"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:alpine
+    container_name: ${redisContainerName}
+    ports:
+      - "6380:6379"
+    volumes:
+      - ${redisVolume}:/data
+    # For production: Add password protection
+    # command: redis-server --appendonly yes --requirepass \${REDIS_PASSWORD}
+    # For development: No password (default)
+    command: redis-server --appendonly yes
+
+  # Optional: Node.js development service
+  # Uncomment if you want to run the app in Docker
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: ${sanitizedName}-app
+  #   environment:
+  #     NODE_ENV: development
+  #     DATABASE_URL: postgresql://rugi:rugi_password@postgres:5432/rugi_auth?schema=public
+  #     PORT: 3000
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   command: npm run dev
+
 volumes:
-  rugi_auth_data:
+  ${postgresVolume}:
+  ${redisVolume}:
 `;
+}
 
 const GITIGNORE_TEMPLATE = `# Dependencies
 node_modules/
@@ -484,6 +530,7 @@ async function initProject(projectName?: string) {
     fs.mkdirSync(path.join(projectPath, "src"), { recursive: true });
     fs.mkdirSync(path.join(projectPath, "keys"), { recursive: true });
     fs.mkdirSync(path.join(projectPath, "prisma"), { recursive: true });
+    fs.mkdirSync(path.join(projectPath, "docker"), { recursive: true });
 
     // Write files
     fs.writeFileSync(path.join(projectPath, ".env"), ENV_TEMPLATE);
@@ -491,9 +538,55 @@ async function initProject(projectName?: string) {
     fs.writeFileSync(path.join(projectPath, ".gitignore"), GITIGNORE_TEMPLATE);
     fs.writeFileSync(
       path.join(projectPath, "docker-compose.yml"),
-      DOCKER_COMPOSE_TEMPLATE
+      getDockerComposeTemplate(name)
     );
     fs.writeFileSync(path.join(projectPath, "src", "server.ts"), SERVER_TEMPLATE);
+    
+    // Copy docker init script
+    const possibleDockerScriptPaths = [
+      // When running from npm package (node_modules/rugi-auth/dist/cli)
+      path.join(__dirname, "..", "..", "..", "docker", "init-db.sh"),
+      // When running from source (src/cli)
+      path.join(__dirname, "..", "..", "..", "docker", "init-db.sh"),
+      // When running from project root
+      path.join(process.cwd(), "node_modules", "rugi-auth", "docker", "init-db.sh"),
+    ];
+    
+    let dockerScriptFound = false;
+    for (const dockerScriptPath of possibleDockerScriptPaths) {
+      if (fs.existsSync(dockerScriptPath)) {
+        fs.copyFileSync(dockerScriptPath, path.join(projectPath, "docker", "init-db.sh"));
+        // Make it executable
+        fs.chmodSync(path.join(projectPath, "docker", "init-db.sh"), 0o755);
+        dockerScriptFound = true;
+        break;
+      }
+    }
+    
+    if (!dockerScriptFound) {
+      // Create a basic init-db.sh if we can't find the original
+      fs.writeFileSync(
+        path.join(projectPath, "docker", "init-db.sh"),
+        `#!/bin/bash
+set -e
+
+echo "Initializing database..."
+
+DB_USER="\${POSTGRES_USER:-rugi}"
+DB_PASSWORD="\${POSTGRES_PASSWORD:-rugi_password}"
+DB_NAME="\${POSTGRES_DB:-rugi_auth}"
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres <<-EOSQL
+    SELECT 'CREATE DATABASE $DB_NAME'
+    WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\\gexec
+    GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
+EOSQL
+
+echo "Database initialization completed successfully!"
+`
+      );
+      fs.chmodSync(path.join(projectPath, "docker", "init-db.sh"), 0o755);
+    }
     fs.writeFileSync(
       path.join(projectPath, "package.json"),
       JSON.stringify(PACKAGE_JSON_TEMPLATE(name, includeDashboard), null, 2)
@@ -509,6 +602,7 @@ async function initProject(projectName?: string) {
     spinner.start("Generating RSA keys...");
     generateKeys(path.join(projectPath, "keys"));
     spinner.succeed("RSA keys generated");
+    spinner.succeed("Docker configuration created");
 
     // Copy Prisma schema - try multiple paths for different install contexts
     spinner.start("Setting up Prisma schema...");

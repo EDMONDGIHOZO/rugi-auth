@@ -136,8 +136,8 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
 
   // Always perform dummy verification first to consume time (prevents timing attacks)
   // Then perform real verification if user exists
-  const [dummyResult, realResult] = await Promise.all([
-    verifyPassword(DUMMY_HASH, DUMMY_PASSWORD), // Always fails, but takes time
+  const [, realResult] = await Promise.all([
+    verifyPassword(DUMMY_HASH, DUMMY_PASSWORD), // Always fails, but takes time (not used, but needed for timing)
     user && user.passwordHash 
       ? verifyPassword(user.passwordHash, input.password)
       : verifyPassword(DUMMY_HASH, DUMMY_PASSWORD), // If no user/password, do dummy verification to maintain timing

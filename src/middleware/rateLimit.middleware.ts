@@ -87,9 +87,12 @@ const store = initializeRedisStore();
  */
 export function closeRedisConnection(): Promise<void> {
     if (redisClient) {
-        return redisClient.quit().catch((error) => {
-            logger.warn({ error }, 'Error closing Redis connection');
-        });
+        return redisClient.quit()
+            .then(() => undefined)
+            .catch((error) => {
+                logger.warn({ error }, 'Error closing Redis connection');
+                return undefined;
+            });
     }
     return Promise.resolve();
 }

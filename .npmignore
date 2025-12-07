@@ -1,0 +1,56 @@
+# Source files (only dist/ is published)
+src/
+scripts/
+tests/
+*.test.ts
+*.spec.ts
+*.test.js
+*.spec.js
+
+# Testing
+vitest.config.ts
+tests/
+coverage/
+.nyc_output/
+*.lcov
+
+# Development files
+.env
+.env.*
+.env.example
+.gitignore
+.github/
+.idea/
+.vscode/
+
+# Documentation (keep README.md, exclude others)
+docs/
+*.md
+!README.md
+
+# Examples
+examples/
+
+# Build config (not needed in package)
+tsconfig.json
+tsconfig.build.json
+ecosystem.config.js
+docker-compose.yml
+
+# Keys (never publish)
+keys/
+*.pem
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+

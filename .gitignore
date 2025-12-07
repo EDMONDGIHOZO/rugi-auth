@@ -1,21 +1,34 @@
 # Dependencies
 node_modules/
-yarn.lock
-pnpm-lock.yaml
+.pnp
+.pnp.js
 
-# Build output
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Production
 dist/
-*.tsbuildinfo
+build/
 
 # Environment variables
 .env
 .env.local
 .env.*.local
 
-# RSA Keys (sensitive)
-keys/
-*.pem
-*.key
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
 
 # IDE
 .vscode/
@@ -24,27 +37,18 @@ keys/
 *.swo
 *~
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Testing
-coverage/
-.nyc_output/
-
 # Prisma
 prisma/migrations/
 
-# Scripts compiled output (run with tsx, not compiled)
-scripts/*.js
-scripts/*.d.ts
-scripts/*.js.map
-scripts/*.d.ts.map
+# Keys (NEVER COMMIT)
+keys/private.pem
+keys/public.pem
 
+# Test database
+*.test.db
+*.test.sqlite
+
+# Temporary files
+tmp/
+temp/
+*.tmp

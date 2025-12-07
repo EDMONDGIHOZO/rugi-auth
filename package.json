@@ -1,6 +1,6 @@
 {
   "name": "rugi-auth",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "description": "Centralized authentication service with multi-app role management",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,7 +20,7 @@
   "files": [
     "dist",
     "prisma",
-    "templates"
+    "docker"
   ],
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -43,6 +43,13 @@
     "migrate:roles": "tsx scripts/migrate-roles-to-app-specific.ts",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:security": "vitest run tests/security",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -106,14 +113,19 @@
     "@types/node": "^20.10.6",
     "@types/nodemailer": "^7.0.4",
     "@types/prompts": "^2.4.9",
+    "@types/supertest": "^6.0.2",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^9.0.7",
     "@typescript-eslint/eslint-plugin": "^6.17.0",
     "@typescript-eslint/parser": "^6.17.0",
+    "@vitest/coverage-v8": "^4.0.15",
+    "@vitest/ui": "^4.0.15",
     "eslint": "^8.56.0",
     "prisma": "5.7.1",
+    "supertest": "^7.0.0",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^4.0.15"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
