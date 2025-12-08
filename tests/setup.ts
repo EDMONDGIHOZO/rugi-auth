@@ -4,7 +4,9 @@ import { execSync } from 'child_process';
 
 // Set test environment variables
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgresql://test:test@localhost:5432/rugi_auth_test';
+process.env.DATABASE_URL =
+  process.env.TEST_DATABASE_URL ||
+  "postgresql://test:test@localhost:5433/rugi_auth_test";
 process.env.CORS_ORIGIN = 'http://localhost:3000';
 process.env.JWT_ISSUER = 'rugi-auth-test';
 process.env.REDIS_HOST = process.env.TEST_REDIS_HOST || 'localhost';

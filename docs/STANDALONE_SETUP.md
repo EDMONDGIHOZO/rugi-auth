@@ -128,7 +128,7 @@ Create `.env`:
 
 ```env
 # Database
-DATABASE_URL="postgresql://rugi:rugi_password@localhost:5432/rugi_auth"
+DATABASE_URL="postgresql://rugi:rugi_password@localhost:5433/rugi_auth"
 
 # Server
 PORT=7100
@@ -166,7 +166,7 @@ services:
       POSTGRES_PASSWORD: rugi_password
       POSTGRES_DB: rugi_auth
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - rugi_auth_data:/var/lib/postgresql/data
 

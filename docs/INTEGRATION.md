@@ -337,7 +337,7 @@ Your app needs access to the same configuration as `rugi-auth`:
 
 ```env
 # .env
-DATABASE_URL="postgresql://user:pass@localhost:5432/rugi_auth"
+DATABASE_URL="postgresql://user:pass@localhost:5433/rugi_auth"
 JWT_ISSUER="rugi-auth"
 JWT_ACCESS_TOKEN_EXPIRY="7d"
 PRIVATE_KEY_PATH="./keys/private.pem"
