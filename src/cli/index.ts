@@ -18,6 +18,7 @@ import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 import { generateKeyPairSync } from "crypto";
+import https from "https";
 
 const program = new Command();
 
@@ -34,6 +35,104 @@ SECURE YOUR APPS.
 function printBanner() {
   console.log(chalk.cyan(banner));
   console.log(chalk.gray(`  Centralized Authentication Service v${VERSION}\n`));
+}
+
+/**
+ * Compare two semantic version strings
+ * Returns: 1 if v1 > v2, -1 if v1 < v2, 0 if equal
+ */
+function compareVersions(v1: string, v2: string): number {
+  const parts1 = v1.split(".").map(Number);
+  const parts2 = v2.split(".").map(Number);
+
+  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+    const part1 = parts1[i] || 0;
+    const part2 = parts2[i] || 0;
+
+    if (part1 > part2) return 1;
+    if (part1 < part2) return -1;
+  }
+
+  return 0;
+}
+
+/**
+ * Fetch the latest version from npm registry
+ */
+async function getLatestVersion(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: "registry.npmjs.org",
+      path: "/rugi-auth",
+      method: "GET",
+      headers: {
+        "User-Agent": "rugi-auth-cli",
+      },
+      timeout: 3000, // 3 second timeout
+    };
+
+    const req = https.request(options, (res) => {
+      let data = "";
+
+      res.on("data", (chunk) => {
+        data += chunk;
+      });
+
+      res.on("end", () => {
+        try {
+          const packageInfo = JSON.parse(data);
+          const latestVersion = packageInfo["dist-tags"]?.latest || null;
+          resolve(latestVersion);
+        } catch (error) {
+          // Silently fail - don't block CLI if check fails
+          resolve(null);
+        }
+      });
+    });
+
+    req.on("error", () => {
+      // Silently fail - don't block CLI if check fails
+      resolve(null);
+    });
+
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(null);
+    });
+
+    req.end();
+  });
+}
+
+/**
+ * Check for updates and display message if newer version is available
+ * Runs asynchronously and doesn't block CLI execution
+ */
+async function checkForUpdates(): Promise<void> {
+  // Skip check in CI environments or if explicitly disabled
+  if (process.env.CI || process.env.RUGI_AUTH_SKIP_UPDATE_CHECK) {
+    return;
+  }
+
+  try {
+    const latestVersion = await getLatestVersion();
+
+    if (!latestVersion) {
+      return; // Silently fail if we can't fetch version
+    }
+
+    if (compareVersions(latestVersion, VERSION) > 0) {
+      // Newer version available
+      console.log(chalk.yellow("\n  ⚠ Update available!"));
+      console.log(chalk.gray(`  Current version: ${VERSION}`));
+      console.log(chalk.green(`  Latest version: ${latestVersion}`));
+      console.log(
+        chalk.cyan(`  Update with: npm install -g rugi-auth@latest\n`)
+      );
+    }
+  } catch (error) {
+    // Silently fail - don't block CLI if check fails
+  }
 }
 
 // Template files
@@ -1165,6 +1264,11 @@ program
   .command("update-dashboard")
   .description("Update the admin dashboard to the latest version")
   .action(updateDashboard);
+
+// Check for updates asynchronously (non-blocking)
+checkForUpdates().catch(() => {
+  // Silently fail - don't block CLI if check fails
+});
 
 program.parse();
 
