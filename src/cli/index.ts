@@ -21,7 +21,7 @@ import { generateKeyPairSync } from "crypto";
 
 const program = new Command();
 
-const VERSION = "2.2.0";
+const VERSION = "2.4.1";
 
 // ASCII Art Banner
 const banner = `
