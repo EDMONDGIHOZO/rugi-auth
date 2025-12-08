@@ -22,7 +22,7 @@ import https from "https";
 
 const program = new Command();
 
-const VERSION = "2.4.1";
+const VERSION = "2.4.2";
 
 // ASCII Art Banner
 const banner = `
