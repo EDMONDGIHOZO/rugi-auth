@@ -1,8 +1,8 @@
-import rateLimit, { Store } from 'express-rate-limit';
+import rateLimit, {Store} from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
-import Redis, { RedisOptions } from 'ioredis';
-import { env } from '../config/env';
-import { logger } from '../utils/logger';
+import Redis, {RedisOptions} from 'ioredis';
+import {env} from '../config/env';
+import {logger} from '../utils/logger';
 
 /**
  * Singleton Redis client instance for rate limiting.
@@ -31,8 +31,7 @@ function getRedisClient(): Redis | null {
       password: env.redis.password || undefined, // Convert empty string to undefined
       retryStrategy: (times) => {
         // Exponential backoff with max delay of 3 seconds
-        const delay = Math.min(times * 50, 3000);
-        return delay;
+        return Math.min(times * 50, 3000);
       },
       maxRetriesPerRequest: 3,
       enableReadyCheck: true,
@@ -148,11 +147,7 @@ export const authRateLimiter = rateLimit({
     return req.ip || "unknown";
   },
 });
-
-/**
- * Stricter rate limiter for sensitive operations
- */
-export const strictRateLimiter = rateLimit({
+rateLimit({
   store: strictStore, // Use Redis store if configured, otherwise MemoryStore
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 3, // 3 requests per 15 minutes
@@ -165,4 +160,3 @@ export const strictRateLimiter = rateLimit({
     return req.ip || "unknown";
   },
 });
-

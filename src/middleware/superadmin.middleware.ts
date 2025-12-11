@@ -3,7 +3,7 @@ import { AuthError } from '../utils/errors';
 import { isSuperAdmin } from '../services/role.service';
 
 /**
- * Middleware to check if the authenticated user is a superadmin
+ * Middleware to check if the authenticated user is a super admin
  * Must be used after authMiddleware
  */
 export async function superAdminMiddleware(
@@ -22,7 +22,7 @@ export async function superAdminMiddleware(
     const isAdmin = await isSuperAdmin(userId);
 
     if (!isAdmin) {
-      throw new AuthError('Access denied. Superadmin privileges required.');
+      throw new AuthError('Access denied. Super-admin privileges required.');
     }
 
     next();
